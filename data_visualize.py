@@ -11,6 +11,11 @@ from pynput import keyboard
 
 class Vis():
   def __init__(self, data_folder, lane_folder):
+    
+    # Points filtering variables
+    self.lidar_beam_value = -1.0
+    self.intensity_threshold = 15
+
     self.index = 0
     self.num_point_attributes = 5
     self.lidar_paths, self.lane_paths = self.read_data(data_folder, lane_folder)
@@ -18,13 +23,24 @@ class Vis():
     self.points = self.load_points()
     self.lanes = self.load_lanes()
 
+  def filter_points(self, raw_points):
+    """Filter raw_points based on their intensity and lidar beam value"""
+    filtered_points = raw_points
+    if self.lidar_beam_value > -1.0:
+      filtered_points = filtered_points[filtered_points[:,4] == self.lidar_beam_value]
+    if self.intensity_threshold > 0:
+      filtered_points = filtered_points[filtered_points[:,3] >= self.intensity_threshold]
+    return filtered_points
+  
   def load_points(self):
-    points = np.fromfile(self.lidar_paths[self.index], dtype=np.float32).reshape(-1, self.num_point_attributes)
-    xyz = points[:, :3]
+    raw_points = np.fromfile(self.lidar_paths[self.index], dtype=np.float32).reshape(-1, self.num_point_attributes)
+
+    filtered_points = self.filter_points(raw_points)
+    xyz = filtered_points[:, :3]
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(xyz)
 
-    colors = self.get_point_color_using_intensity(points)
+    colors = self.get_point_color_using_intensity(filtered_points)
     pcd.colors = o3d.utility.Vector3dVector(colors)
     return pcd
   
@@ -97,8 +113,7 @@ class Vis():
 
   def visualize(self):
     gui.Application.instance.initialize()
-    self.window = gui.Application.instance.create_window(f"Frame Index: {self.index} / {self.frame_length - 1}"\
-                    f" {self.lidar_paths[self.index]}", 1920, 1080)
+    self.window = gui.Application.instance.create_window(self.make_title(), 1280, 720)
     self._3d = gui.SceneWidget()
     self._3d.scene = rendering.Open3DScene(self.window.renderer)
     self._3d.scene.set_background([0.3, 0.3, 0.3, 1.0])
@@ -117,16 +132,25 @@ class Vis():
         def on_press(key):
             if key == keyboard.Key.left and self.index > 0:
                 self.index -= 1
-                self.points = self.load_points()
-                self.lanes = self.load_lanes()
-                gui.Application.instance.post_to_main_thread(
-                    self.window, self.update)
             elif key == keyboard.Key.right and self.index < self.frame_length - 1:
                 self.index += 1
-                self.points = self.load_points()
-                self.lanes = self.load_lanes()
-                gui.Application.instance.post_to_main_thread(
-                    self.window, self.update)
+            elif key == keyboard.Key.down and self.lidar_beam_value > -1.0:
+                self.lidar_beam_value -= 1.0
+            elif key == keyboard.Key.up and self.lidar_beam_value < 63.0:
+                self.lidar_beam_value += 1.0
+            elif key == keyboard.Key.page_down and self.intensity_threshold > 0:
+                self.intensity_threshold -= 1
+            elif key == keyboard.Key.page_up and self.intensity_threshold < 255:
+                self.intensity_threshold += 1
+            else:
+              return
+            
+            self.points = self.load_points()
+            self.lanes = self.load_lanes()
+            gui.Application.instance.post_to_main_thread(
+              self.window,
+              self.update
+            )
 
         with keyboard.Listener(
             on_press=on_press) as listener:
@@ -150,8 +174,11 @@ class Vis():
       mat.line_width = 2 * self.window.scaling
       self._3d.scene.add_geometry(name, self.lanes, mat)
 
+  def make_title(self):
+    return f"Frame Index: {self.index} / {self.frame_length - 1} - {self.lidar_paths[self.index]} | Lidar Beam Value : {self.lidar_beam_value} | Intensity Threshold : {self.intensity_threshold}"
+
   def update_title(self):
-    self.window.title = f"Frame Index: {self.index} / {self.frame_length - 1} - {self.lidar_paths[self.index]}"
+    self.window.title = self.make_title()
   
   def update(self):
     self.update_title()
