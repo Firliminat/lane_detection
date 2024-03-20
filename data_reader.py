@@ -48,7 +48,7 @@ class DataReader():
     self.lanes_paths = lanes_paths
 
 
-  def read_points(self, frame_index):
+  def read_points(self, frame_index: int = 0):
     """Reads the points corresponding to the given frame index"""
 
     if self.lidar_paths is None or self.lidar_paths[frame_index] is None:
@@ -56,7 +56,7 @@ class DataReader():
     
     return np.fromfile(self.lidar_paths[frame_index], dtype=np.float32).reshape(-1, self.num_point_attributes)
 
-  def read_lanes_coefs(self, frame_index):
+  def read_lanes_coefs(self, frame_index: int = 0):
     """Reads the lanes corresponding to the given frame index"""
 
     if self.lanes_paths is None or self.lanes_paths[frame_index] is None:
@@ -73,4 +73,13 @@ class DataReader():
         lanes_coef.append(lane_coefs)
       lanes_coef = np.array(lanes_coef)
     return lanes_coef
+  
+  def write_lanes_coefs(self, frame_index: int = None, lanes_coefs=np.zeros((0,0))):
+    """Writes the lanes to the file corresponding to the given frame index"""
+
+    lanes_path = self.lanes_paths[frame_index]
+    if lanes_path is not None:
+      with open(lanes_path, "w") as f:
+        out_str = '\n'.join([';'.join([f'{coef}' for coef in lane_coefs]) for lane_coefs in lanes_coefs])
+        f.write(out_str)
     

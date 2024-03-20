@@ -215,7 +215,7 @@ class Visualization():
   def _update_points_geometry(self):
     """Updates the points geometry using self.points"""
 
-    if self._3d is None:
+    if self._3d is None or self.points is None:
       return
 
     xyz = self.points[:, :3]
@@ -244,7 +244,7 @@ class Visualization():
   def _update_lanes_geometry(self):
     """Updates the lanes geometry using self.lanes_coefs"""
 
-    if self._3d is None:
+    if self._3d is None or self.lanes_coefs is None:
       return
     
     connect = []
