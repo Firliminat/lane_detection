@@ -22,14 +22,24 @@ pip install -r requirement.txt
 
 ## Usage
 
-### Starting the visualization
+### Fitting polynomials to the data
+
+To fit polynomials to the data you need to run main.py. You can do it this way:
+```
+python main.py
+```
+You will be prompted with steps need.
+
+### Visualization
+
+#### Start it
 
 To visualize the data and filter it you need to run data_visualize.py. You can do it this way:
 ```
 python data_visualize.py
 ```
 
-### Controls
+#### Control it
 
 - You can chane frame by using the left or right arrow keys.
 - You can increase or decrease intensity minimal value with PgUp or PgDown keys. A minimal value of 0 will display all points.
