@@ -17,7 +17,7 @@ py -3.8 -m venv "lane_test"
 # On Unix or MacOS
 source tutorial-env/bin/activate
 
-pip install -r vis_requirement.txt
+pip install -r requirement.txt
 ```
 
 ## Usage
