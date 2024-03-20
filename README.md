@@ -26,7 +26,7 @@ pip install -r requirement.txt
 
 To fit polynomials to the data you need to run main.py. You can do it this way:
 ```
-python main.py
+python src/main.py
 ```
 You will be prompted with steps need.
 
