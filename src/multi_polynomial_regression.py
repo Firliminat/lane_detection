@@ -17,6 +17,7 @@ class MultiPolynomialRegression():
     self.points = points[:,0:2]
     self.score = np.inf
     self.polynomial_family = MultiPolynomialRegression.null_polynomial_family(self.num_polynomials, self.deg)
+    self.scores = np.zeros((0,2))
 
 
   @staticmethod
@@ -237,6 +238,7 @@ class MultiPolynomialRegression():
         verbose,
         talkative
       )
+      self.scores = np.append(self.scores, [[self.num_polynomials, self.score]], axis=0)
       
       # Updating lopping conditions.
       score_condition = score_delta > min_score_delta

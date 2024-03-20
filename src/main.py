@@ -30,7 +30,6 @@ data_reader = DataReader(data_folder, lanes_folder, num_point_attributes)
 
 print('Enter the frame index then press ENTER to procede.')
 frame_index = int(input().strip())
-print(frame_index)
 
 points = data_reader.read_points(frame_index)
 lanes_coefs = data_reader.read_lanes_coefs(frame_index)
@@ -67,5 +66,14 @@ def loop_callback_wrapper(points=np.zeros((0,3))):
 
 model = MultiPolynomialRegression(deg=3, points=points[:,0:2])
 model.fit(polynomials_fitting_callback=loop_callback_wrapper(points), verbose=True)
+
+fig, ax = plt.subplots()
+ax.plot(model.scores[:,0], model.scores[:,1])
+
+ax.set(xlabel='Number of polynomials', ylabel='Score',
+       title='Evolution of the score')
+ax.grid()
+
+plt.show()
 
 input()
