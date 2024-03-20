@@ -1,4 +1,5 @@
 from typing import Callable
+from matplotlib import pyplot as plt
 import numpy as np
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
@@ -6,15 +7,25 @@ from sklearn.linear_model import LinearRegression
 class MultiPolynomialRegression():
   """Class used for clusterizing using multiple univariate polynomial regressions"""
 
-  def __init__(self, min_num_polynomials=1, deg=3, points=np.zeros((0,2))):
+  def __init__(self, min_num_polynomials=2, max_num_polynomials=20, max_fit_iterations=100, min_delta=15, min_epsilon=5, deg=3, points=np.zeros((0,2))):
     """MultiPolynomialRegression constructor:
     Inputs:
+      min_num_polynomials: minimal number of polynomials to fit to the points.
+      max_num_polynomials: maximal number of polynomials to fit to the points.
+      max_fit_iterations: maximal number of iterations to fit the polynomials the points.
+      min_delta: minimum score diminution when growing the polynomial family.
+      min_epsilon: minimum score diminution when fitting the polynomials.
       num_polynomials: number of polynomials to fit to the points.
-      deg: degree of the polynomial.
+      deg: degree of the polynomials.
       points: data to fit the polynomial to. Format of the points : (inputs, targets)"""
     self.num_polynomials = max(min_num_polynomials, 1)
+    self.max_num_polynomials = max(max_num_polynomials, 1)
+    self.max_fit_iterations = max_fit_iterations
+    self.min_delta = min_delta
+    self.min_epsilon = min_epsilon
     self.deg = deg
     self.points = points[:,0:2]
+    
     self.score = np.inf
     self.polynomial_family = MultiPolynomialRegression.null_polynomial_family(self.num_polynomials, self.deg)
     self.scores = np.zeros((0,2))
@@ -59,6 +70,15 @@ class MultiPolynomialRegression():
         print(f'Current polynomial_family: {self.polynomial_family}')
     self.score = score / self.num_polynomials
 
+  def plot_score_evolution(self):
+    _, ax = plt.subplots()
+    ax.plot(self.scores[:,0], self.scores[:,1])
+
+    ax.set(xlabel='Number of polynomials', ylabel='Score',
+          title='Evolution of the score')
+    ax.grid()
+
+    plt.show()
 
   def init_polynomial_family(self):
     """Initalizes the polynomial family.
@@ -142,9 +162,8 @@ class MultiPolynomialRegression():
     # Fitting stops when the scores doesn't improove more than min_score_delta
     # or when we reach the maximum number of iterations
     score_condition = True
-    min_score_delta = 1
     loop_index = 0
-    while score_condition and loop_index < 50:
+    while score_condition and loop_index < self.max_fit_iterations:
       old_score = self.score
 
       self.assign_points()
@@ -155,7 +174,7 @@ class MultiPolynomialRegression():
       # Updating score condition
       self.compute_score()
       score_delta = old_score - self.score
-      score_condition = score_delta > min_score_delta
+      score_condition = score_delta > self.min_epsilon
 
       if verbose:
         print(f'\t\t{loop_index}: {self.score} | {score_delta}')
@@ -166,6 +185,7 @@ class MultiPolynomialRegression():
 
   def fit(
     self,
+    score_plotting: bool=False,
     size_fitting_callback: Callable=None,
     polynomials_fitting_callback: Callable=None,
     verbose=False,
@@ -228,9 +248,8 @@ class MultiPolynomialRegression():
     # Growing the polynomial family stops when the score doesn't improove more than min_score_delta
     # or when we reach the maximum number of iterations
     score_condition = True
-    min_score_delta = 15
     score_delta = np.inf
-    while score_condition and self.num_polynomials < 50:
+    while score_condition and self.num_polynomials < self.max_num_polynomials:
       score_delta = iterate(
         self,
         size_fitting_callback,
@@ -241,7 +260,7 @@ class MultiPolynomialRegression():
       self.scores = np.append(self.scores, [[self.num_polynomials, self.score]], axis=0)
       
       # Updating lopping conditions.
-      score_condition = score_delta > min_score_delta
+      score_condition = score_delta > self.min_delta
       self.num_polynomials += 1
     # Compensating for end of final loop incrementation
     self.num_polynomials -= 1
@@ -257,6 +276,10 @@ class MultiPolynomialRegression():
         verbose,
         talkative
       )
+    
+    if(score_plotting):
+      self.plot_score_evolution()
+
 
 
 class PolynomialRegression():

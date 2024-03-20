@@ -37,14 +37,12 @@ class DataReader():
 
     lidar_files = sorted(os.listdir(self.data_folder))
     self.lidar_paths = [os.path.join(self.data_folder, f) for f in lidar_files]
+    self.nb_frames = len(self.lidar_paths)
 
     lanes_paths = []
     for lidar_file in lidar_files:
       lane_path = os.path.join(self.lanes_folder, lidar_file.replace("bin", "txt"))
-      if os.path.isfile(lane_path):
-        lanes_paths.append(lane_path)
-      else:
-        lanes_paths.append(None)
+      lanes_paths.append(lane_path)
     self.lanes_paths = lanes_paths
 
 
@@ -59,7 +57,7 @@ class DataReader():
   def read_lanes_coefs(self, frame_index: int = 0):
     """Reads the lanes corresponding to the given frame index"""
 
-    if self.lanes_paths is None or self.lanes_paths[frame_index] is None:
+    if self.lanes_paths is None or self.lanes_paths[frame_index] is None or not os.path.isfile(self.lanes_paths[frame_index]):
       print(f"Can't find lane file")
       return None
     
@@ -82,4 +80,5 @@ class DataReader():
       with open(lanes_path, "w") as f:
         out_str = '\n'.join([';'.join([f'{coef}' for coef in lane_coefs]) for lane_coefs in lanes_coefs])
         f.write(out_str)
+        f.close()
     

@@ -1,26 +1,31 @@
-from matplotlib import pyplot as plt
 import numpy as np
-from sklearn import preprocessing
+from traitlets import Callable
+
 from data_reader import DataReader
 from multi_polynomial_regression import MultiPolynomialRegression
-from visualization import Visualization
+from tools import filter_lanes_coefs, line_plot, step_by_step_process_frame
 
-def get_point_color_using_last_dimension(points):
-  scaler = preprocessing.MinMaxScaler(feature_range=(0,255)).fit(points)
-  color_values = scaler.transform(points)
-  color_values = np.clip(color_values[:, -1], 0, 255)
-  color_values = color_values.astype(np.uint8)
-  cmap = plt.get_cmap("viridis")
+def filter_points(points=np.zeros((0,3))):
+  """Point filtering method.
+    Behavior: Uses a threshold on intensity"""
+  
+  return points[points[:,3] >= 15]
 
-  # Initialize the matplotlib color map
-  sm = plt.cm.ScalarMappable(cmap=cmap)
+def process_frame(data_reader: DataReader, model, frame_index: int = 0, filter_method: Callable = lambda x: x):
+  """Processes a frame.
+    Behavior: filter the points then fits a model to them and saves the closest lanes to the lane file."""
+  
+  if model is None:
+    return
+  
+  model.points = filter_method(data_reader.read_points(frame_index))
+  model.fit()
 
-  # Obtain linear color range
-  color_range = sm.to_rgba(np.linspace(0, 1, 256), bytes=True)[:, 2::-1]
+  lanes_coefs = filter_lanes_coefs(model.polynomial_family)
 
-  color_range = color_range.reshape(256, 3).astype(np.float32) / 255.0
-  colors = color_range[color_values]
-  return colors
+  data_reader.write_lanes_coefs(frame_index, lanes_coefs)
+
+  return model.score
 
 data_folder = "./pointclouds"
 lanes_folder = "./sample_output"
@@ -28,52 +33,18 @@ num_point_attributes = 5
 
 data_reader = DataReader(data_folder, lanes_folder, num_point_attributes)
 
-print('Enter the frame index then press ENTER to procede.')
-frame_index = int(input().strip())
-
-points = data_reader.read_points(frame_index)
-lanes_coefs = data_reader.read_lanes_coefs(frame_index)
-
-vis = Visualization(f'Visualization of frame {frame_index}', points, lanes_coefs)
-vis.run()
-
-print('Next step: Data filtering. Press ENTER to procede.')
-input()
-
-def filter_points(points=np.zeros((0,3))):
-  return points[points[:,3] >= 15]
-
-points = filter_points(points)
-vis.update(
-  'Points filtering of frame {frame_index}',
-  np.c_[points[:,:3], get_point_color_using_last_dimension(points)],
-  lanes_coefs
+model = MultiPolynomialRegression(
+  min_delta=25,
+  min_epsilon=1
 )
 
-print('Next step: Fitting the model. Press ENTER to procede.')
-input()
+scores = np.zeros((0,2))
+for frame_index in range(data_reader.nb_frames):
+  print(f'Processing frame {frame_index}')
+  score = process_frame(data_reader, model, frame_index, filter_points)
+  scores = np.append(scores, [[frame_index, score]], axis=0)
 
-def loop_callback_wrapper(points=np.zeros((0,3))):
-  def loop_callback(model: MultiPolynomialRegression):
-    points[:,4] = model.points[:,2]
-    lanes_coefs = model.polynomial_family
-    vis.update(
-      'MultiPolynomial Regression fitting to frame {frame_index}',
-      np.c_[points[:,:3], get_point_color_using_last_dimension(points)],
-      lanes_coefs
-    )
-  return loop_callback
+line_plot(scores, 'Frame index', 'Score', 'Score for each frame')
 
-model = MultiPolynomialRegression(deg=3, points=points[:,0:2])
-model.fit(polynomials_fitting_callback=loop_callback_wrapper(points), verbose=True)
+step_by_step_process_frame(data_reader, model, filter_points)
 
-fig, ax = plt.subplots()
-ax.plot(model.scores[:,0], model.scores[:,1])
-
-ax.set(xlabel='Number of polynomials', ylabel='Score',
-       title='Evolution of the score')
-ax.grid()
-
-plt.show()
-
-input()

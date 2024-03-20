@@ -28,7 +28,8 @@ To fit polynomials to the data you need to run main.py. You can do it this way:
 ```
 python src/main.py
 ```
-You will be prompted with steps need.
+First the algorithm will go through all the frames and fit a model to find the white lines and save the closest lanes to the origin to a lane file in sample output.
+Then you will be prompted with steps to display a frame and see the model being fitted to this frame.
 
 ### Visualization
 
