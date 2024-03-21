@@ -1,8 +1,12 @@
+#ifndef TOOLS_HPP
+#define TOOLS_HPP
+
 #include <string>
 #include <vector>
 #include <algorithm> 
 #include <cctype>
 #include <locale>
+#include <Eigen\Dense>
 
 
 namespace Tools {
@@ -30,4 +34,12 @@ namespace Tools {
     std::string str, 
     std::string delimiter
   );
+
+  // Remove a row from Eigen Matrix
+  void removeRow(Eigen::MatrixXd&, unsigned int);
+
+  // Remove a column from Eigen Matrix
+  void removeColumn(Eigen::MatrixXd&, unsigned int);
 }
+
+#endif /* TOOLS_HPP */
