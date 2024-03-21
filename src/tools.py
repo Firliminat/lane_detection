@@ -30,7 +30,10 @@ def get_point_color_using_last_dimension(points):
 def line_plot(array, xlabel, ylabel, title):
   """Creates a line plot with array[:,0] as X axis and array[:,1] as Y axis"""
 
-  _, ax = plt.subplots()
+  if len(array.shape) < 2 or array.shape[1] < 2:
+    array = np.c_[[[i] for i in range(array.shape[0])], array]
+  
+  fig, ax = plt.subplots()
   ax.plot(array[:,0], array[:,1])
 
   ax.set(
@@ -41,6 +44,8 @@ def line_plot(array, xlabel, ylabel, title):
   ax.grid()
 
   plt.show(block=False)
+  
+  return fig
 
 def filter_lanes_coefs(lanes_coefs=np.zeros((0,4))):
   """Lanes filtering method.
