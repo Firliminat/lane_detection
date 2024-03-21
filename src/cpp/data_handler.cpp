@@ -112,7 +112,7 @@ std::vector<std::vector<double>> DataHandler::ReadLanes(
   return lanes_coefs;
 }
 
-// Write data to file
+// Write lanes coefficients to the file corresponding to frame index
 void DataHandler::WriteLanesCoefs(
   const int frame_index,
   const std::vector<std::vector<double>>& lanes_coefs

@@ -47,7 +47,7 @@ public:
   // Reads from file the lanes corresponding to the given frame index
   std::vector<std::vector<double>> ReadLanes(const int);
 
-  // Write data to file
+  // Write lanes coefficients to the file corresponding to frame index
   void WriteLanesCoefs(const int,const std::vector<std::vector<double>>&);
 };
 
