@@ -12,8 +12,6 @@ int main(){
   Eigen::MatrixXd lanes = data_handler->readLanes(0);
   std::cout << "lanes:\n" << lanes << std::endl;
 
-  data_handler->writeLanes(0, lanes);
-
   Eigen::MatrixXd bias = Eigen::MatrixXd::Ones(points.rows(), 1);
   Eigen::MatrixXd x(points.col(0));
   Eigen::MatrixXd x_squared(x.array() * x.array());
