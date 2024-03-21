@@ -44,6 +44,19 @@ class Visualization():
     self._update_or_stop_from_event_thread: threading.Thread = None
     """Thread checking _update_or_stop event"""
 
+  def run_or_update(
+    self,
+    title = 'Visualization',
+    points = np.zeros((0,6)),
+    lanes_coefs = []
+  ):
+    self._update(title, points, lanes_coefs)
+    if self._window is None:
+      self.run()
+    else:
+      self.update(title, points, lanes_coefs)
+    return self
+
   def run(self):
     """Starts the visualization window"""
 
@@ -144,10 +157,12 @@ class Visualization():
       self._window.post_redraw()
 
 
-  def _stop():
+  def _stop(self):
     """Quits the o3d application"""
 
     gui.Application.instance.quit()
+    self._window = None
+    self._3d = None
 
 
   def _update_from_input(self):

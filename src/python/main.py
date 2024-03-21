@@ -7,7 +7,7 @@ from traitlets import Callable
 from data_reader import DataReader
 from multi_polynomial_regression import MultiPolynomialRegression
 from visualization import Visualization
-from tools import filter_lanes_coefs, get_point_color_using_last_dimension, line_plot, step_by_step_process_frame
+from tools import filter_lanes_coefs, get_point_color_using_last_dimension, line_plot, process_all_frames, step_by_step_process_frame
 
 def intensity_filter(points=np.zeros((0,3)), min_intensity=-np.inf, max_intensity=np.inf):
   """Point filtering using intensity"""
@@ -32,41 +32,18 @@ def centered_height_filter(points=np.zeros((0,3)), min_height=-np.inf, max_heigh
 
   return height_filter(points, center_h + min_height, center_h + max_height)
 
-def process_frame(data_reader: DataReader, model, frame_index: int = 0, filter_method: Callable = lambda x: x):
-  """Processes a frame.
-    Behavior: filter the points then fits a model to them and saves the closest lanes to the lane file."""
-  
-  if model is None:
-    return
-  
-  model.points = filter_method(data_reader.read_points(frame_index))
-  model.fit()
-
-  lanes_coefs = filter_lanes_coefs(model.polynomial_family)
-
-  data_reader.write_lanes_coefs(frame_index, lanes_coefs)
-
-  return model.score
-
 data_folder = "./pointclouds"
 lanes_folder = "./sample_output"
 num_point_attributes = 5
 data_reader = DataReader(data_folder, lanes_folder, num_point_attributes)
 
-""" model = MultiPolynomialRegression(
+model = MultiPolynomialRegression(
   min_delta=25,
   min_epsilon=1
 )
 
-scores = np.zeros((0,2))
-for frame_index in range(data_reader.nb_frames):
-  print(f'Processing frame {frame_index}')
-  score = process_frame(data_reader, model, frame_index, intensity_filter)
-  scores = np.append(scores, [[frame_index, score]], axis=0)
-
-line_plot(scores, 'Frame index', 'Score', 'Score for each frame')
-
-step_by_step_process_frame(data_reader, model, intensity_filter) """
+low_intesity_filter_threshold = 15
+low_intesity_filter = lambda x: intensity_filter(x, low_intesity_filter_threshold)
 
 def make_title(frame_index, pca_switch):
   title =  f'Visualizing frame {frame_index}'
@@ -75,20 +52,7 @@ def make_title(frame_index, pca_switch):
   
   return title
 
-def run_or_update(
-  vis:Visualization = None,
-  title = 'Visualization',
-  points = np.zeros((0,6)),
-  lanes = []
-):
-  if vis is None:
-    vis = Visualization(title, points, lanes)
-    vis.run()
-  else:
-    vis.update(title,points,lanes)
-  return vis
-
-def update(vis, fig, frame_index, pca_switch, data_reader):
+def update(fig: plt.Figure, frame_index, pca_switch, data_reader,vis=Visualization()):
   title = make_title(frame_index, pca_switch)
   points = centered_height_filter(data_reader.read_points(frame_index), -1, 1)
 
@@ -104,13 +68,13 @@ def update(vis, fig, frame_index, pca_switch, data_reader):
 
   if fig is not None:
     plt.close(fig)
-  # cumulative_variance = np.append([0], np.cumsum(pca.explained_variance_ratio_))
-  # fig = line_plot(cumulative_variance, 'Nb of components', 'Explained variance ratio', 'Cumulative variance')
-  fig, ax = plt.subplots()
+  cumulative_variance = np.append([0], np.cumsum(pca.explained_variance_ratio_))
+  fig = line_plot(cumulative_variance, 'Nb of components', 'Explained variance ratio', 'Cumulative variance')
+  # fig, ax = plt.subplots()
 
-  # We can set the number of bins with the *bins* keyword argument.
-  ax.hist(points[:,2] - np.median(points[:,2]), bins=200)
-  plt.show(block=False)
+  # # We can set the number of bins with the *bins* keyword argument.
+  # ax.hist(points[:,2] - np.median(points[:,2]), bins=200)
+  # plt.show(block=False)
 
   
   display_points = np.zeros((0,6))
@@ -126,20 +90,19 @@ def update(vis, fig, frame_index, pca_switch, data_reader):
     display_lanes = pca_lanes[:2,:2]
 
 
-  return run_or_update(
-    vis,
+  return vis.run_or_update(
     title = title,
     points = display_points,
-    lanes = display_lanes
+    lanes_coefs = display_lanes
   ), fig
 
-vis = None
-fig = None
+vis = Visualization()
+fig: plt.Figure = None
 frame_index = 0
 pca_switch = False
 
 while True:
-  vis, fig = update(vis, fig, frame_index, pca_switch, data_reader)
+  vis, fig = update(fig, frame_index, pca_switch, data_reader, vis)
 
   command = input().strip()
   if command == 'a':
@@ -148,6 +111,10 @@ while True:
     frame_index += 1
   elif command == '-' and frame_index > 0:
     frame_index -= 1
+  elif command == 'pa':
+    process_all_frames(model)
+  elif command == 'p':
+    step_by_step_process_frame(data_reader, model, vis, low_intesity_filter)
   elif command == 'q':
     vis.stop()
     break
