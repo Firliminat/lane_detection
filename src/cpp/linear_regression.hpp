@@ -16,12 +16,12 @@ public:
 
   // Fit the linear regression model
   void fit();
-
   // Predict target values for new data
   Eigen::VectorXd predict(const Eigen::MatrixXd&) const;
-
   // Get the coefficients (weights) of the model
   Eigen::VectorXd coefficients() const;
+  // Compute the R^2 score of the model
+  double score() const;
 };
 
 #endif /* LINEAR_REGRESSION_HPP */

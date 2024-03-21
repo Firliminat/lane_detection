@@ -30,3 +30,12 @@ Eigen::VectorXd LinearRegression::predict(const Eigen::MatrixXd& new_data) const
 Eigen::VectorXd LinearRegression::coefficients() const {
   return weights;
 }
+
+// Compute the R^2 score of the model
+double LinearRegression::score() const {
+  Eigen::VectorXd y_pred = X * weights;
+  double y_mean = y.mean();
+  double ss_tot = (y.array() - y_mean).square().sum();
+  double ss_res = (y.array() - y_pred.array()).square().sum();
+  return 1.0 - (ss_res / ss_tot);
+}
