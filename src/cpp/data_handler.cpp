@@ -2,6 +2,7 @@
 #include <sstream>
 #include <vector>
 #include <filesystem>
+#include <Eigen/Dense>
 #include "data_handler.hpp"
 #include "tools.hpp"
 
@@ -21,7 +22,7 @@ DataHandler::DataHandler(
 {}
 
 // Get instance of the singleton
-DataHandler *DataHandler::GetInstance(
+DataHandler *DataHandler::getInstance(
   const std::string& data_folder,
   const std::string& lanes_folder,
   const int num_point_attributes
@@ -34,7 +35,7 @@ DataHandler *DataHandler::GetInstance(
 }
 
 // Reads from file the points corresponding to the given frame index
-void DataHandler::ParseFolders() {
+void DataHandler::parseFolders() {
   this->lidar_paths = std::vector<std::filesystem::path>();
   this->lanes_paths = std::vector<std::filesystem::path>();
   this->num_frames = 0;
@@ -54,7 +55,7 @@ void DataHandler::ParseFolders() {
 }
 
 // Reads from file the points corresponding to the given frame index
-std::vector<std::vector<double>> DataHandler::ReadPoints(
+Eigen::MatrixXd DataHandler::readPoints(
   // Index of the frame to read
   const int frame_index
 ) {
@@ -66,28 +67,30 @@ std::vector<std::vector<double>> DataHandler::ReadPoints(
     throw std::runtime_error("Failed to open file for reading.");
   }
 
-  std::vector<std::vector<double>> points{};
-  std::vector<double> point(this->num_point_attributes, 0.0);
+  Eigen::MatrixXd points = Eigen::MatrixXd::Zero(1,5);
+  Eigen::MatrixXd point = Eigen::MatrixXd::Zero(1,5);
   double value = 0.0;
   int attribute_index = 0;
   while(lidar_file.read(reinterpret_cast<char*>(&value), sizeof(double))){
-    point.at(attribute_index) = value;
+    point(0, attribute_index) = value;
 
     if(attribute_index != (this->num_point_attributes -1)) {
       ++attribute_index;
     }
     else {
-      points.push_back(point);
+      points.conservativeResize(points.rows()+1, points.cols());
+      points.row(points.rows()-1) = point;
       attribute_index = 0;
     }
   }
+  Tools::removeRow(points, 0);
 
   lidar_file.close();
   return points;
 }
 
 // Reads from file the lanes corresponding to the given frame index
-std::vector<std::vector<double>> DataHandler::ReadLanes(
+Eigen::MatrixXd DataHandler::readLanes(
   // Index of the frame to read
   const int frame_index
 ) {
@@ -96,38 +99,48 @@ std::vector<std::vector<double>> DataHandler::ReadLanes(
     throw std::runtime_error("Failed to open file for reading.");
   }
 
-  std::vector<std::vector<double>> lanes_coefs{};
   std::string line;
+  std::vector<double> buff{};
+  int num_rows = 0, num_cols;
   while (std::getline(lanes_file, line)) {
     Tools::trim(line);
-    std::vector<double> lane_coefs{};
+    num_cols = 0;
     for (std::string coef_str : Tools::split(line, ";")) {
       double coef = stod(coef_str);
-      lane_coefs.push_back(coef);
+      buff.push_back(coef);
+      ++num_cols;
     }
-    lanes_coefs.push_back(lane_coefs);
+    ++num_rows;
   }
 
   lanes_file.close();
+  
+  Eigen::MatrixXd lanes_coefs = Eigen::MatrixXd::Zero(num_rows, num_cols);
+  for(int i = 0; i < num_rows; ++i) {
+    for(int j = 0; j < num_cols; ++j) {
+      lanes_coefs(i, j) = buff.at(i * num_cols + j);
+    }
+  }
+
   return lanes_coefs;
 }
 
 // Write lanes coefficients to the file corresponding to frame index
-void DataHandler::WriteLanesCoefs(
+void DataHandler::writeLanes(
   const int frame_index,
-  const std::vector<std::vector<double>>& lanes_coefs
+  const Eigen::MatrixXd& lanes_coefs
 ) {
-  if(lanes_coefs.empty()) {
+  if(lanes_coefs.rows() < 1) {
     return;
   }
 
   std::ofstream lane_file(this->lanes_paths.at(frame_index));
   if (!lane_file.is_open()) {
-      throw std::runtime_error("Failed to open file for writing.");
+    throw std::runtime_error("Failed to open file for writing.");
   }
 
   std::stringstream file_stream;
-  for (const auto& lane_coefs : lanes_coefs) {
+  for (const auto& lane_coefs : lanes_coefs.rowwise()) {
     std::string line_string;
     std::stringstream line_stream;
     for (const auto& coef : lane_coefs) {

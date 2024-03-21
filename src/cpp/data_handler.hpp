@@ -1,8 +1,9 @@
+#ifndef DATA_HANDLER_HPP
+#define DATA_HANDLER_HPP
+
 #include <vector>
 #include <filesystem>
-
-#ifndef MY_CLASS_HPP
-#define MY_CLASS_HPP
+#include <Eigen/Dense>
 
 class DataHandler {
 protected:
@@ -32,23 +33,24 @@ public:
   int num_frames;
 
   // Get instance of the singleton
-  static DataHandler *GetInstance(const std::string&, const std::string&, const int);
+  static DataHandler *getInstance(const std::string&, const std::string&, const int);
 
   // Delete copy constructor and assignment operator to prevent copies
   DataHandler(const DataHandler&) = delete;
   DataHandler& operator=(const DataHandler&) = delete;
 
   // Reads from file the points corresponding to the given frame index
-  void ParseFolders();
+  void parseFolders();
 
   // Reads from file the points corresponding to the given frame index
-  std::vector<std::vector<double>> ReadPoints(const int);
+  
+  Eigen::MatrixXd readPoints(const int);
 
   // Reads from file the lanes corresponding to the given frame index
-  std::vector<std::vector<double>> ReadLanes(const int);
+  Eigen::MatrixXd readLanes(const int);
 
   // Write lanes coefficients to the file corresponding to frame index
-  void WriteLanesCoefs(const int,const std::vector<std::vector<double>>&);
+  void writeLanes(const int,const Eigen::MatrixXd&);
 };
 
-#endif /* MY_CLASS_HPP */
+#endif /* DATA_HANDLER_HPP */
