@@ -1,6 +1,6 @@
 #include "linear_regression.hpp"
-#include <iostream>
 #include <Eigen/Dense>
+#include "tools.hpp"
 
 LinearRegression::LinearRegression(
   const Eigen::MatrixXd& features,
@@ -21,6 +21,15 @@ LinearRegression::LinearRegression(
     }
     this->weights = weights;
   }
+
+  // Making sure weights are between 0.0 and 1.0 and unitary
+  double min_w = this->weights.minCoeff(), max_w = this->weights.maxCoeff();
+  if(min_w != max_w) {
+    this->weights = Eigen::VectorXd((this->weights.array() - min_w) / (max_w - min_w));
+  } else {
+    this->weights = Eigen::VectorXd(this->weights.array().abs());
+  }
+  this->weights = Eigen::VectorXd(this->weights.array() / this->weights.sum());
 }
 
 // Fit the ridge regression model
@@ -29,6 +38,7 @@ void LinearRegression::fit() {
   Eigen::MatrixXd XtWX = X.transpose() * W * X;
   Eigen::MatrixXd eye = Eigen::MatrixXd::Identity(XtWX.rows(), XtWX.cols());
   coefficients = (XtWX + lambda * eye).ldlt().solve(X.transpose() * W * y);
+  y_pred = X * coefficients;
 }
 
 // Predict target values for new data
@@ -43,11 +53,14 @@ Eigen::VectorXd LinearRegression::getCoefficients() const {
   return coefficients;
 }
 
+// Compute the sum of squared residuals
+double LinearRegression::sumSquaredResiduals() const {
+  Eigen::VectorXd residuals = Eigen::VectorXd(weights.array() * (y.array() - y_pred.array()));
+  return residuals.squaredNorm();
+}
+
 // Compute the R^2 score of the model
 double LinearRegression::score() const {
-  Eigen::VectorXd y_pred = X * coefficients;
-  double y_mean = y.mean();
-  double ss_tot = (weights.array() * (y.array() - y_mean)).square().sum();
-  double ss_res = (weights.array() * (y.array() - y_pred.array())).square().sum();
-  return 1.0 - (ss_res / ss_tot);
+  double ss_tot = (weights.array() * (y.array() - y.mean())).square().sum();
+  return 1.0 - (sumSquaredResiduals() / ss_tot);
 }
