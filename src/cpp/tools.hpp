@@ -24,7 +24,7 @@ namespace Tools {
       }).base(), s.end());
   }
 
-  // trim whitespaces from both ends
+  // trim whitespaces from both ends (in place)
   inline void trim(std::string &s) {
     rtrim(s);
     ltrim(s);
