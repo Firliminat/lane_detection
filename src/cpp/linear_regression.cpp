@@ -12,7 +12,7 @@ LinearRegression::LinearRegression(
   X.col(features.cols()) = Eigen::VectorXd::Ones(features.rows());
 
   // If weights are provided, use them; otherwise, initialize weights to ones
-  if (weights.size() == 0) {
+  if (weights.size() < 1) {
     this->weights = Eigen::VectorXd::Ones(features.rows());
   } else {
     if (weights.size() != features.rows()) {

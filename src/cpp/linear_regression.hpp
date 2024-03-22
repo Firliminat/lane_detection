@@ -5,7 +5,7 @@
 
 class LinearRegression {
 private:
-  Eigen::MatrixXd X; // Design matrix
+  Eigen::MatrixXd X; // Input matrix
   Eigen::VectorXd y; // Target vector
   Eigen::VectorXd y_pred; // Predicted target vector
   Eigen::VectorXd coefficients; // Model coefficients
