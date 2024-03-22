@@ -1,6 +1,5 @@
 #include "linear_regression.hpp"
 #include <Eigen/Dense>
-#include "tools.hpp"
 
 LinearRegression::LinearRegression(
   const Eigen::MatrixXd& features,
@@ -53,14 +52,15 @@ Eigen::VectorXd LinearRegression::getCoefficients() const {
   return coefficients;
 }
 
-// Compute the sum of squared residuals
-double LinearRegression::sumSquaredResiduals() const {
+// Compute the average of squared residuals
+double LinearRegression::avgSquaredResiduals() const {
   Eigen::VectorXd residuals = Eigen::VectorXd(weights.array() * (y.array() - y_pred.array()));
-  return residuals.squaredNorm();
+  return residuals.squaredNorm() / residuals.size();
 }
 
 // Compute the R^2 score of the model
 double LinearRegression::score() const {
+  double ss_res = (weights.array() * (y.array() - y_pred.array())).square().sum();
   double ss_tot = (weights.array() * (y.array() - y.mean())).square().sum();
-  return 1.0 - (sumSquaredResiduals() / ss_tot);
+  return 1.0 - (ss_res / ss_tot);
 }

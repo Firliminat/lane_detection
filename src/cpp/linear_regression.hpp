@@ -26,8 +26,8 @@ public:
   Eigen::VectorXd predict(const Eigen::MatrixXd&) const;
   // Get the coefficients of the model
   Eigen::VectorXd getCoefficients() const;
-  // Compute the sum of squared residuals
-  double sumSquaredResiduals() const;
+  // Compute the avg of squared residuals
+  double avgSquaredResiduals() const;
   // Compute the R^2 score of the model
   double score() const;
 };

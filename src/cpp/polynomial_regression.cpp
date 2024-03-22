@@ -58,9 +58,9 @@ Eigen::VectorXd PolynomialRegression::getCoefficients() const {
     return linear_model.getCoefficients();
 }
 
-// Compute the sum of squared residuals
-double PolynomialRegression::sumSquaredResiduals() const {
-  return linear_model.sumSquaredResiduals();
+// Compute the avg of squared residuals
+double PolynomialRegression::avgSquaredResiduals() const {
+  return linear_model.avgSquaredResiduals();
 }
 
 // Compute the R^2 score of the model

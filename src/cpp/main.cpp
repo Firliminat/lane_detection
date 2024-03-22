@@ -27,8 +27,11 @@ int main(){
   // Output coefficients and predictions
   std::cout << "Coefficients: \n" << model.getCoefficients() << std::endl;
   
+  // Compute and output the avg of squared residuals
+  std::cout << "Avg of squared residuals: " << model.avgSquaredResiduals() << std::endl;
+
   // Compute and output the R^2 score
-  std::cout << "Sum of squared residuals: " << model.sumSquaredResiduals() << std::endl;
+  std::cout << "R^2 score: " << model.score() << std::endl;
 
   return 0;
 }
