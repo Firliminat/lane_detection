@@ -29,6 +29,8 @@ class Visualization():
     self.lanes_coefs = lanes_coefs
     """Polynomials coefficients of the lanes to visualize"""
 
+    self._is_running = False
+    """Boolean stating if the o3D app is running"""
     self._3d = None
     """Open3D scene"""
     self._window = None
@@ -51,7 +53,7 @@ class Visualization():
     lanes_coefs = []
   ):
     self._update(title, points, lanes_coefs)
-    if self._window is None:
+    if not self._is_running:
       self.run()
     else:
       self.update(title, points, lanes_coefs)
@@ -59,6 +61,10 @@ class Visualization():
 
   def run(self):
     """Starts the visualization window"""
+
+    if self._is_running:
+      return
+    self._is_running = True
 
     self._event = threading.Event()
     def init_and_run(vis):
@@ -88,6 +94,7 @@ class Visualization():
 
     self._event.stop = True
     self._event.set()
+    self._is_running = False
 
 
   def update_title(self, new_title: str=None):
@@ -113,9 +120,12 @@ class Visualization():
       self.lanes_coefs = new_lanes_coefs
       self._update_lanes_geometry()
 
-
   def _run(self):
     """Initiates Open3D app and starts it"""
+
+    if self._is_running:
+      return
+    self._is_running = True
 
     # Initiating the o3d app
     gui.Application.instance.initialize()
@@ -128,10 +138,6 @@ class Visualization():
     # Updating the geometry using the data
     self._update_points_geometry()
     self._update_lanes_geometry()
-
-    # Setting up the camera
-    bounds = self._pcd.get_axis_aligned_bounding_box()
-    self._3d.setup_camera(60, bounds, bounds.get_center())
 
     # Setting up listeners
     self._update_from_input()
@@ -161,6 +167,7 @@ class Visualization():
     """Quits the o3d application"""
 
     gui.Application.instance.quit()
+    self._is_running = False
     self._window = None
     self._3d = None
 
@@ -244,6 +251,9 @@ class Visualization():
         self._3d.scene.remove_geometry(name)
     self._3d.scene.add_geometry(name, self._pcd, rendering.MaterialRecord())
 
+    # Updates the camera now that we have updated self._pcd
+    self._update_camera()
+
   def _get_point_color_using_last_dimensions(self):
     """Transforms last self.points dimensions into colors."""
 
@@ -311,3 +321,13 @@ class Visualization():
       mat.shader = "unlitLine"
       mat.line_width = 2 * self._window.scaling
       self._3d.scene.add_geometry(name, self._lanes, mat)
+
+  def _update_camera(self):
+    """Updates the camera"""
+
+    if(self._pcd is None or self._3d is None):
+      return
+    
+    # Setting up the camera
+    bounds = self._pcd.get_axis_aligned_bounding_box()
+    self._3d.setup_camera(60, bounds, bounds.get_center())

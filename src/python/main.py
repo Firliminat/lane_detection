@@ -68,8 +68,15 @@ def update(fig: plt.Figure, frame_index, pca_switch, data_reader,vis=Visualizati
 
   if fig is not None:
     plt.close(fig)
-  cumulative_variance = np.append([0], np.cumsum(pca.explained_variance_ratio_))
-  fig = line_plot(cumulative_variance, 'Nb of components', 'Explained variance ratio', 'Cumulative variance')
+  # cumulative_variance = np.append([0], np.cumsum(pca.explained_variance_ratio_))
+  # fig = line_plot(cumulative_variance, 'Nb of components', 'Explained variance ratio', 'Cumulative variance')
+  intensities = points[:,2]
+  intensities.sort()
+  k=4.0
+  x0=np.median(intensities)
+  print(x0)
+  scaled_intensities = 1.0 / (1.0 + np.exp(-k*(intensities - x0)))
+  fig = line_plot(np.c_[intensities, scaled_intensities], 'Intensity', 'Scaled Intensity', '')
   # fig, ax = plt.subplots()
 
   # # We can set the number of bins with the *bins* keyword argument.
@@ -111,10 +118,6 @@ while True:
     frame_index += 1
   elif command == '-' and frame_index > 0:
     frame_index -= 1
-  elif command == 'pa':
-    process_all_frames(model)
-  elif command == 'p':
-    step_by_step_process_frame(data_reader, model, vis, low_intesity_filter)
   elif command == 'q':
     vis.stop()
     break
