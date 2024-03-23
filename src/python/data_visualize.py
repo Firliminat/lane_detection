@@ -47,36 +47,59 @@ class Vis():
   def load_lanes(self):
     lane_path = self.lane_paths[self.index]
     if lane_path is not None:
+      lanes_coefs = []
       with open(lane_path, "r") as f:
-        left_lane_coef = f.readline()
-        left_lane_coef = [float(x) for x in left_lane_coef.strip().split(";")]
-        right_lane_coef = f.readline()
-        right_lane_coef = [float(x) for x in right_lane_coef.strip().split(";")]
+        for line in f:
+          try:
+            lane_coefs = [float(x) for x in line.strip().split(";")]
+          except:
+            lane_coefs = [0.0,0.0,0.0,0.0]
+          lanes_coefs.append(lane_coefs)
+      lanes_coefs = np.array(lanes_coefs)
+      
       connect = []
+      colors = []
       x_max = 40
       num = 80
       xs = np.linspace(start=-x_max, stop=x_max, num=num, endpoint=True)
-      left_ys = left_lane_coef[-1]
-      power = len(left_lane_coef) - 1
-      for i, coef in enumerate(left_lane_coef[:-1]):
-        left_ys += np.power(xs, power - i) * coef
+      
+      lanes = []
+      for lane_coef in lanes_coefs:
+        ys = np.polyval(lane_coef, xs)
 
-      right_ys = right_lane_coef[-1]
-      for i, coef in enumerate(right_lane_coef[:-1]):
-        right_ys += np.power(xs, power - i) * coef
+        lane = np.stack([xs, ys, np.zeros_like(xs, dtype=np.float32)], axis=-1)
+        lanes.append(lane)
+      
+      if len(lanes) > 0:
+        lanes = np.concatenate(lanes, axis=0)
 
-      left_lane = np.stack([xs, left_ys, np.zeros_like(xs, dtype=np.float32)], axis=-1)
-      right_lane = np.stack([xs, right_ys, np.zeros_like(xs, dtype=np.float32)], axis=-1)
-      lane = np.concatenate([left_lane, right_lane], axis=0)
+      nb_lanes = max(len(lanes_coefs),1)
+      scale_factor = 255 // nb_lanes
 
-      connect = [[i, i + 1] for i in range(len(xs) - 1)] +\
-                [[i, i + 1] for i in range(len(xs), 2 * len(xs) - 1)]
+      cmap = plt.get_cmap("viridis")
+
+      # Initialize the matplotlib color map
+      sm = plt.cm.ScalarMappable(cmap=cmap)
+
+      # Obtain linear color range
+      color_range = sm.to_rgba(np.linspace(0, 1, 256), bytes=True)[:, 2::-1]
+
+      color_range = color_range.reshape(256, 3).astype(np.float32) / 255.0
+
+      for i in range(0, nb_lanes):
+        connect += [[j, j + 1] for j in range(i * len(xs), (i+1) * len(xs) - 1)]
+        lane_index = np.clip(i * scale_factor, 0, 255)
+        lane_index = lane_index.astype(np.uint8)
+        colors += [color_range[lane_index] for _ in range(i * len(xs), (i+1) * len(xs) - 1)]
       connect = np.array(connect)
+      colors = np.array(colors)
 
       lines = o3d.geometry.LineSet()
-      lines.points = o3d.utility.Vector3dVector(lane)
+      lines.points = o3d.utility.Vector3dVector(lanes)
       lines.lines = o3d.utility.Vector2iVector(connect)
+      lines.colors = o3d.utility.Vector3dVector(colors)
       return lines
+    
     print(f"Can't find lane file")
     return None
 

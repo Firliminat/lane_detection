@@ -60,16 +60,16 @@ class DataReader():
       print(f"Can't find lane file")
       return None
     
-    lanes_coef = []
+    lanes_coefs = []
     with open(self.lanes_paths[frame_index], "r") as f:
       for line in f:
         try:
           lane_coefs = [float(x) for x in line.strip().split(";")]
         except:
           lane_coefs = [0.0,0.0,0.0,0.0]
-        lanes_coef.append(lane_coefs)
-      lanes_coef = np.array(lanes_coef)
-    return lanes_coef
+        lanes_coefs.append(lane_coefs)
+    lanes_coefs = np.array(lanes_coefs)
+    return lanes_coefs
   
   def write_lanes_coefs(self, frame_index: int = None, lanes_coefs=np.zeros((0,0))):
     """Writes the lanes to the file corresponding to the given frame index"""
