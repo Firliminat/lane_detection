@@ -313,6 +313,7 @@ class Visualization():
     self._lanes.points = o3d.utility.Vector3dVector(lanes)
     self._lanes.lines = o3d.utility.Vector2iVector(connect)
     self._lanes.colors = o3d.utility.Vector3dVector(colors)
+    
     name = "__lanes__"
     if self._3d.scene.scene.has_geometry(name):
       self._3d.scene.remove_geometry(name)

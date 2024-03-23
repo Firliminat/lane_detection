@@ -6,11 +6,12 @@
 
 class PolynomialRegression {
 private:
-  Eigen::MatrixXd X_poly; // Polynomial features matrix
+  Eigen::MatrixXd poly_X; // Polynomial inputs matrix
+  int degree; // Degree of the polynomial to use
   LinearRegression linear_model; // Ridge regression model
 
-  // Generate polynomial features matrix
-  Eigen::MatrixXd generatePolynomialFeatures(const Eigen::MatrixXd&, int) const;
+// Generate a matrix containing the polynomial features of the input features
+  Eigen::MatrixXd generatePolynomialFeatures(const Eigen::MatrixXd&) const;
 
 public:
   PolynomialRegression(
@@ -21,14 +22,31 @@ public:
     int
   );
 
+  PolynomialRegression(double, int);
+
+  PolynomialRegression();
+
+  // Updates the input matrix and the target vector
+  void updateData(const Eigen::MatrixXd&, const Eigen::VectorXd&, const Eigen::VectorXd&);
+
+  // Setter for the coefficients
+  void setCoefficients(const Eigen::VectorXd&);
+
   // Fit the polynomial regression model
   void fit();
+
   // Predict target values for new data
   Eigen::VectorXd predict(const Eigen::MatrixXd& new_data) const;
+
+  // Get the distance to prediction for each row
+  Eigen::VectorXd distanceToModel(const Eigen::MatrixXd&, const Eigen::VectorXd&) const;
+
   // Get the coefficients of the model
   Eigen::VectorXd getCoefficients() const;
+
   // Compute the avg of squared residuals
   double avgSquaredResiduals() const;
+
   // Compute the R^2 score of the model
   double score() const;
 };

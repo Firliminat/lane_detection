@@ -6,7 +6,7 @@
 #include <Eigen/Dense>
 
 class DataHandler {
-protected:
+private:
   // Unique instance of the singleton
   static DataHandler* data_handler_;
 
