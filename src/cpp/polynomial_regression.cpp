@@ -46,7 +46,7 @@ PolynomialRegression::PolynomialRegression(
 ) {
   this->degree = degree;
   this->poly_X = generatePolynomialFeatures(inputs);
-  this->linear_model = LinearRegression(poly_X, Eigen::VectorXd::Zero(1), Eigen::VectorXd::Zero(1), lambda);
+  this->linear_model = LinearRegression(poly_X, targets, weights, lambda);
 }
 
 PolynomialRegression::PolynomialRegression(

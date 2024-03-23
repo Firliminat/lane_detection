@@ -14,7 +14,7 @@ private:
   DataHandler(
     const std::string& data_folder,
     const std::string& lanes_folder,
-    const int num_point_attributes
+    const int num_features
   );
 
 public:
@@ -28,7 +28,7 @@ public:
   std::vector<std::filesystem::path> lanes_paths;
 
   // Number of attributes for each point
-  int num_point_attributes;
+  int num_features;
   // Number of frames in the data set
   int num_frames;
 

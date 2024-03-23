@@ -14,6 +14,8 @@ private:
   double lambda; // Ridge regularization parameter
   int degree; // Degree of the polynomials
   
+  Eigen::VectorXi countAssignedPoints() const;
+
   // Updates the given inputs, targets and weights with the ones assigned to model with given index
   void updateWithAssignedData(
     Eigen::MatrixXd&,

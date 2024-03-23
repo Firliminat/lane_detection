@@ -1,5 +1,4 @@
 #include <fstream>
-#include <sstream>
 #include <vector>
 #include <filesystem>
 #include <Eigen/Dense>
@@ -14,22 +13,22 @@ DataHandler* DataHandler::data_handler_ = nullptr;
 DataHandler::DataHandler(
   const std::string& data_folder,
   const std::string& lanes_folder,
-  const int num_point_attributes
+  const int num_features
 ) :
   data_folder(data_folder),
   lanes_folder(lanes_folder),
-  num_point_attributes(num_point_attributes)
+  num_features(num_features)
 {}
 
 // Get instance of the singleton
 DataHandler *DataHandler::getInstance(
   const std::string& data_folder,
   const std::string& lanes_folder,
-  const int num_point_attributes
+  const int num_features
 )
 {
     if(data_handler_==nullptr){
-        data_handler_ = new DataHandler(data_folder, lanes_folder, num_point_attributes);
+        data_handler_ = new DataHandler(data_folder, lanes_folder, num_features);
     }
     return data_handler_;
 }
@@ -56,7 +55,6 @@ void DataHandler::parseFolders() {
 
 // Reads from file the points corresponding to the given frame index
 Eigen::MatrixXd DataHandler::readPoints(
-  // Index of the frame to read
   const int frame_index
 ) {
   std::ifstream lidar_file(
@@ -67,23 +65,22 @@ Eigen::MatrixXd DataHandler::readPoints(
     throw std::runtime_error("Failed to open file for reading.");
   }
 
-  Eigen::MatrixXd points = Eigen::MatrixXd::Zero(1,5);
-  Eigen::MatrixXd point = Eigen::MatrixXd::Zero(1,5);
-  double value = 0.0;
+  Eigen::MatrixXd points(0, num_features);
+  Eigen::VectorXd point(num_features);
+  float value = 0.0;
   int attribute_index = 0;
-  while(lidar_file.read(reinterpret_cast<char*>(&value), sizeof(double))){
-    point(0, attribute_index) = value;
+  while(lidar_file.read(reinterpret_cast<char*>(&value), sizeof(float))){
+    point(attribute_index) = value;
 
-    if(attribute_index != (this->num_point_attributes -1)) {
+    if(attribute_index != (this->num_features -1)) {
       ++attribute_index;
     }
     else {
-      points.conservativeResize(points.rows()+1, points.cols());
+      points.conservativeResize(points.rows()+1, Eigen::NoChange);
       points.row(points.rows()-1) = point;
       attribute_index = 0;
     }
   }
-  Tools::removeRow(points, 0);
 
   lidar_file.close();
   return points;

@@ -2,6 +2,18 @@
 
 #include <Eigen/Dense>
 #include "polynomial_regression.hpp"
+#include <iostream>
+#include <iomanip>
+
+// Counts the number of points assigned to each model
+Eigen::VectorXi MultiPolynomialRegression::countAssignedPoints() const {
+  Eigen::VectorXi assigned_counts = Eigen::VectorXi::Zero(poly_models.size());
+  for (int point_idx = 0; point_idx < X.rows(); ++point_idx){
+    assigned_counts(points_assignments(point_idx)) += 1;
+  }
+
+  return assigned_counts;
+}
 
 // Updates the given inputs, targets and weights with the ones assigned to model with given index
 void MultiPolynomialRegression::updateWithAssignedData(
@@ -54,8 +66,10 @@ void MultiPolynomialRegression::initModels(int num_models){
   for (int model_idx = 0; model_idx < num_models; ++model_idx) {
     poly_models(model_idx) = PolynomialRegression(lambda, degree);
     Eigen::VectorXd coefficients(degree + 1);
+    
     coefficients.block(0, 0, degree, 1) = Eigen::VectorXd::Zero(degree);
     coefficients(degree) = (model_idx + 1) * delta_y / (num_models + 1) + min_y;
+
     poly_models(model_idx).setCoefficients(coefficients);
   }
 }
@@ -89,16 +103,40 @@ MultiPolynomialRegression::MultiPolynomialRegression(
   this->y = Eigen::VectorXd(targets);
   this->degree = degree;
   this->lambda = lambda;
+
+  // If weights are provided, use them; otherwise, initialize weights to ones
+  if (weights.size() < 1) {
+    this->weights = Eigen::VectorXd::Ones(inputs.rows());
+  } else {
+    if (weights.size() != inputs.rows()) {
+      throw std::invalid_argument("Invalid size of weights vector.");
+    }
+    this->weights = Eigen::VectorXd(weights);
+  }
+  // Making sure weights are positive and weights vector is unitary for manhattan norm
+  this->weights = Eigen::VectorXd(weights.array().abs());
+  this->weights = Eigen::VectorXd(this->weights.array() / this->weights.sum());
   initModels(num_models);
 }
 
 // Fit the model
 void MultiPolynomialRegression::fit() {
+  std::stringstream title_stream;
+  title_stream << std::setw(2) << std::setfill('0') << "| iter |    score | improvement |";
+  for (int model_idx = 0; model_idx < poly_models.size(); ++model_idx) {
+    title_stream << " score model " << model_idx << " |";
+  }
+  title_stream << "|";
+  for (int model_idx = 0; model_idx < poly_models.size(); ++model_idx) {
+    title_stream << " count model " << model_idx << " |";
+  }
+  std::cout << title_stream.str() << std::endl;
+
   bool score_condition = true;
   double
     old_score,
     new_score = std::numeric_limits<double>::max(),
-    min_improvement = 1000.0;
+    min_improvement = 25.0;
   int iter_idx = 0;
   while (score_condition && iter_idx++ < 50) {
     old_score = new_score;
@@ -108,6 +146,19 @@ void MultiPolynomialRegression::fit() {
     
     new_score = avgSquaredResiduals();
     score_condition = old_score - new_score > min_improvement;
+
+    Eigen::MatrixXi assigned_counts = countAssignedPoints();
+    std::stringstream line_stream;
+    line_stream << std::setw(3) << std::setfill('0') << "|    " << iter_idx << " |";
+    line_stream << std::scientific << std::setprecision(2) << " " << new_score << " |" << "    " << old_score - new_score << " |";
+    for (int model_idx = 0; model_idx < poly_models.size(); ++model_idx) {
+      line_stream << std::scientific << std::setprecision(2) << "      " << poly_models(model_idx).score() << " |";
+    }
+    line_stream << "|";
+    for (int model_idx = 0; model_idx < poly_models.size(); ++model_idx) {
+      line_stream << std::setw(6) << "           " << assigned_counts(model_idx) << " |";
+    }
+    std::cout << line_stream.str() << std::endl;
   }
 }
 

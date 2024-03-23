@@ -68,13 +68,8 @@ void LinearRegression::updateData(
     weights = Eigen::VectorXd(new_weights);
   }
 
-  // Making sure weights are between 0.0 and 1.0 and unitary
-  double min_w = weights.minCoeff(), max_w = weights.maxCoeff();
-  if(min_w != max_w) {
-    weights = Eigen::VectorXd((weights.array() - min_w) / (max_w - min_w));
-  } else {
-    weights = Eigen::VectorXd(weights.array().abs());
-  }
+  // Making sure weights are positive and weights vector is unitary norm1
+  weights = Eigen::VectorXd(weights.array().abs());
   weights = Eigen::VectorXd(weights.array() / weights.sum());
 }
 
