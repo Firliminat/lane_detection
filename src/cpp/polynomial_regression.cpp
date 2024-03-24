@@ -3,11 +3,11 @@
 #include "linear_regression.hpp"
 
 // Generate a matrix containing the polynomial features of the input features
-Eigen::MatrixXd PolynomialRegression::generatePolynomialFeatures(
-  const Eigen::MatrixXd& inputs
+Eigen::MatrixXf PolynomialRegression::generatePolynomialFeatures(
+  const Eigen::MatrixXf& inputs
 ) const {
   if (degree < 1){
-    return Eigen::MatrixXd(1,0);
+    return Eigen::MatrixXf(1,0);
   }
 
   /*
@@ -25,7 +25,7 @@ Eigen::MatrixXd PolynomialRegression::generatePolynomialFeatures(
   */
   int num_samples = inputs.rows();
   int num_features = inputs.cols();
-  Eigen::MatrixXd poly_features(num_samples, degree * num_features);
+  Eigen::MatrixXf poly_features(num_samples, degree * num_features);
   for (int i = 0; i < num_samples; ++i) {
     int index = 0;
     for (int j = 0; j < num_features; ++j) {
@@ -38,10 +38,10 @@ Eigen::MatrixXd PolynomialRegression::generatePolynomialFeatures(
 }
 
 PolynomialRegression::PolynomialRegression(
-  const Eigen::MatrixXd& inputs,
-  const Eigen::VectorXd& targets,
-  const Eigen::VectorXd& weights = Eigen::VectorXd(),
-  double lambda = 0.0,
+  const Eigen::MatrixXf& inputs,
+  const Eigen::VectorXf& targets,
+  const Eigen::VectorXf& weights = Eigen::VectorXf(),
+  float lambda = 0.0,
   int degree = 0
 ) {
   this->degree = degree;
@@ -50,29 +50,29 @@ PolynomialRegression::PolynomialRegression(
 }
 
 PolynomialRegression::PolynomialRegression(
-  double lambda = 0.0,
+  float lambda = 0.0,
   int degree = 0
 ) {
   this->degree = degree;
-  this->poly_X = generatePolynomialFeatures(Eigen::MatrixXd(1, 1));
-  this->linear_model = LinearRegression(poly_X, Eigen::VectorXd::Zero(1), Eigen::VectorXd::Zero(1), lambda);
+  this->poly_X = generatePolynomialFeatures(Eigen::MatrixXf(1, 1));
+  this->linear_model = LinearRegression(poly_X, Eigen::VectorXf::Zero(1), Eigen::VectorXf::Zero(1), lambda);
 }
 
 PolynomialRegression::PolynomialRegression() :
   degree(0)
 {
-  this->poly_X = generatePolynomialFeatures(Eigen::MatrixXd(1, 1));
-  this->linear_model = LinearRegression(poly_X, Eigen::VectorXd::Zero(1), Eigen::VectorXd::Zero(1), 0.0);
+  this->poly_X = generatePolynomialFeatures(Eigen::MatrixXf(1, 1));
+  this->linear_model = LinearRegression(poly_X, Eigen::VectorXf::Zero(1), Eigen::VectorXf::Zero(1), 0.0);
 }
 
 // Updates the input matrix and the target vector
 void PolynomialRegression::updateData(
-  const Eigen::MatrixXd& new_inputs,
-  const Eigen::VectorXd& new_targets,
-  const Eigen::VectorXd& new_weights
+  const Eigen::MatrixXf& new_inputs,
+  const Eigen::VectorXf& new_targets,
+  const Eigen::VectorXf& new_weights
 ) {
   // Making sure inputs are not empty
-  Eigen::MatrixXd inputs(new_inputs);
+  Eigen::MatrixXf inputs(new_inputs);
   if (inputs.rows() < 1) {
     inputs.conservativeResize(1, Eigen::NoChange);
   }
@@ -81,13 +81,13 @@ void PolynomialRegression::updateData(
   }
   
   // Making sure targets are not empty
-  Eigen::VectorXd targets(new_targets);
+  Eigen::VectorXf targets(new_targets);
   if (targets.size() < 1) {
     targets.conservativeResize(1);
   }
   
   // Making sure weights are not empty
-  Eigen::VectorXd weights(new_weights);
+  Eigen::VectorXf weights(new_weights);
   if (weights.size() < 1) {
     weights.conservativeResize(1);
   }
@@ -98,7 +98,7 @@ void PolynomialRegression::updateData(
 }
 
 // Setter for the coefficients
-void PolynomialRegression::setCoefficients(const Eigen::VectorXd& new_coefficients) {
+void PolynomialRegression::setCoefficients(const Eigen::VectorXf& new_coefficients) {
   linear_model.setCoefficients(new_coefficients);
 }
 
@@ -108,28 +108,28 @@ void PolynomialRegression::fit() {
 }
 
 // Predict target values for new data
-Eigen::VectorXd PolynomialRegression::predict(const Eigen::MatrixXd& new_data) const {
-  Eigen::MatrixXd poly_new_data = generatePolynomialFeatures(new_data);
+Eigen::VectorXf PolynomialRegression::predict(const Eigen::MatrixXf& new_data) const {
+  Eigen::MatrixXf poly_new_data = generatePolynomialFeatures(new_data);
   return linear_model.predict(poly_new_data);
 }
 
 // Get the distance to prediction for each row
-Eigen::VectorXd PolynomialRegression::distanceToModel(const Eigen::MatrixXd& inputs, const Eigen::VectorXd& targets) const {
-  Eigen::MatrixXd new_X = generatePolynomialFeatures(inputs);
+Eigen::VectorXf PolynomialRegression::distanceToModel(const Eigen::MatrixXf& inputs, const Eigen::VectorXf& targets) const {
+  Eigen::MatrixXf new_X = generatePolynomialFeatures(inputs);
   return linear_model.distanceToModel(new_X, targets);
 }
 
 // Get the coefficients of the model
-Eigen::VectorXd PolynomialRegression::getCoefficients() const {
+Eigen::VectorXf PolynomialRegression::getCoefficients() const {
     return linear_model.getCoefficients();
 }
 
-// Compute the avg of squared residuals
-double PolynomialRegression::avgSquaredResiduals() const {
-  return linear_model.avgSquaredResiduals();
+// Compute the sum of squared residuals
+float PolynomialRegression::sumSquaredResiduals() const {
+  return linear_model.sumSquaredResiduals();
 }
 
 // Compute the R^2 score of the model
-double PolynomialRegression::score() const {
+float PolynomialRegression::score() const {
   return linear_model.score();
 }

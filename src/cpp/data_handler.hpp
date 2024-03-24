@@ -44,13 +44,13 @@ public:
 
   // Reads from file the points corresponding to the given frame index
   
-  Eigen::MatrixXd readPoints(const int);
+  Eigen::MatrixXf readPoints(const int);
 
   // Reads from file the lanes corresponding to the given frame index
-  Eigen::MatrixXd readLanes(const int);
+  Eigen::MatrixXf readLanes(const int);
 
   // Write lanes coefficients to the file corresponding to frame index
-  void writeLanes(const int,const Eigen::MatrixXd&);
+  void writeLanes(const int,const Eigen::MatrixXf&);
 };
 
 #endif /* DATA_HANDLER_HPP */

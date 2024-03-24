@@ -36,10 +36,10 @@ namespace Tools {
   );
 
   // Remove a row from Eigen Matrix
-  void removeRow(Eigen::MatrixXd&, int);
+  void removeRow(Eigen::MatrixXf&, const int);
 
   // Remove a column from Eigen Matrix
-  void removeColumn(Eigen::MatrixXd&, int);
+  void removeColumn(Eigen::MatrixXf&, const int);
 }
 
 #endif /* TOOLS_HPP */

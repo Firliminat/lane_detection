@@ -17,14 +17,14 @@ Eigen::VectorXi MultiPolynomialRegression::countAssignedPoints() const {
 
 // Updates the given inputs, targets and weights with the ones assigned to model with given index
 void MultiPolynomialRegression::updateWithAssignedData(
-  Eigen::MatrixXd& assigned_X,
-  Eigen::VectorXd& assigned_y,
-  Eigen::VectorXd& assigned_weights,
-  int model_idx
+  Eigen::MatrixXf& assigned_X,
+  Eigen::VectorXf& assigned_y,
+  Eigen::VectorXf& assigned_weights,
+  const int model_idx
 ) const {
-  assigned_X = Eigen::MatrixXd(0, X.cols());
-  assigned_y = Eigen::VectorXd(0);
-  assigned_weights = Eigen::VectorXd(0);
+  assigned_X = Eigen::MatrixXf(0, X.cols());
+  assigned_y = Eigen::VectorXf(0);
+  assigned_weights = Eigen::VectorXf(0);
   for (int point_idx = 0; point_idx < X.rows(); ++point_idx){
     if(points_assignments(point_idx) == model_idx) {
       assigned_X.conservativeResize(assigned_X.rows() + 1, Eigen::NoChange);
@@ -43,11 +43,11 @@ void MultiPolynomialRegression::updateWithAssignedData(
 void MultiPolynomialRegression::assignToPolynomials(){
   // For each point iterates over the models to assign the closest one
   for (int input_idx = 0; input_idx < X.rows(); ++input_idx) {
-    double min_dist = std::numeric_limits<double>::max();
+    float min_dist = std::numeric_limits<float>::max();
     for (int model_idx = 0; model_idx < poly_models.size(); ++model_idx) {
-      Eigen::MatrixXd inputs = X.row(input_idx);
-      Eigen::VectorXd targets = y.row(input_idx);
-      double new_dist = poly_models(model_idx).distanceToModel(inputs, targets)(0);
+      Eigen::MatrixXf inputs = X.row(input_idx);
+      Eigen::VectorXf targets = y.row(input_idx);
+      float new_dist = poly_models(model_idx).distanceToModel(inputs, targets)(0);
       if (new_dist < min_dist) {
         min_dist = new_dist;
         points_assignments(input_idx) = model_idx;
@@ -57,17 +57,17 @@ void MultiPolynomialRegression::assignToPolynomials(){
 }
 
 // Initialize the polynomial models
-void MultiPolynomialRegression::initModels(int num_models){
+void MultiPolynomialRegression::initModels(const int num_models){
   if (num_models < 1) {
     throw std::invalid_argument("Invalidnumber of polynomial models.");
   }
   poly_models = Eigen::VectorX<PolynomialRegression>(num_models);
-  double min_y = y.minCoeff(), delta_y = y.maxCoeff() - min_y;
+  float min_y = y.minCoeff(), delta_y = y.maxCoeff() - min_y;
   for (int model_idx = 0; model_idx < num_models; ++model_idx) {
     poly_models(model_idx) = PolynomialRegression(lambda, degree);
-    Eigen::VectorXd coefficients(degree + 1);
+    Eigen::VectorXf coefficients(degree + 1);
     
-    coefficients.block(0, 0, degree, 1) = Eigen::VectorXd::Zero(degree);
+    coefficients.block(0, 0, degree, 1) = Eigen::VectorXf::Zero(degree);
     coefficients(degree) = (model_idx + 1) * delta_y / (num_models + 1) + min_y;
 
     poly_models(model_idx).setCoefficients(coefficients);
@@ -77,9 +77,9 @@ void MultiPolynomialRegression::initModels(int num_models){
 // fit the polynomial models to the data points assigned to them
 void MultiPolynomialRegression::fitModels(){
   for (int model_idx = 0; model_idx < poly_models.size(); ++model_idx) {
-    Eigen::MatrixXd assigned_X;
-    Eigen::VectorXd assigned_y;
-    Eigen::VectorXd assigned_weights;
+    Eigen::MatrixXf assigned_X;
+    Eigen::VectorXf assigned_y;
+    Eigen::VectorXf assigned_weights;
     updateWithAssignedData(assigned_X, assigned_y, assigned_weights, model_idx);
 
     poly_models(model_idx).updateData(assigned_X, assigned_y, assigned_weights);
@@ -89,34 +89,36 @@ void MultiPolynomialRegression::fitModels(){
 
 
 MultiPolynomialRegression::MultiPolynomialRegression(
-  const Eigen::MatrixXd& inputs,
-  const Eigen::VectorXd& targets,
-  const Eigen::VectorXd& weights,
-  double lambda,
-  int degree,
-  int num_models
+  const Eigen::MatrixXf& inputs,
+  const Eigen::VectorXf& targets,
+  const Eigen::VectorXf& weights,
+  const float lambda,
+  const int degree,
+  const int num_models
 ) :
   X(inputs),
   weights(weights),
   points_assignments(X.rows())
 {
-  this->y = Eigen::VectorXd(targets);
+  this->y = Eigen::VectorXf(targets);
   this->degree = degree;
   this->lambda = lambda;
 
   // If weights are provided, use them; otherwise, initialize weights to ones
   if (weights.size() < 1) {
-    this->weights = Eigen::VectorXd::Ones(inputs.rows());
+    this->weights = Eigen::VectorXf::Ones(inputs.rows());
   } else {
     if (weights.size() != inputs.rows()) {
       throw std::invalid_argument("Invalid size of weights vector.");
     }
-    this->weights = Eigen::VectorXd(weights);
+    this->weights = Eigen::VectorXf(weights);
   }
   // Making sure weights are positive and weights vector is unitary for manhattan norm
-  this->weights = Eigen::VectorXd(weights.array().abs());
-  this->weights = Eigen::VectorXd(this->weights.array() / this->weights.sum());
-  initModels(num_models);
+  this->weights = Eigen::VectorXf(weights.array().abs());
+  this->weights = Eigen::VectorXf(this->weights.array() / this->weights.sum());
+
+  // Initialize the models
+  initModels(std::max(num_models, 1));
 }
 
 // Fit the model
@@ -133,9 +135,9 @@ void MultiPolynomialRegression::fit() {
   std::cout << title_stream.str() << std::endl;
 
   bool score_condition = true;
-  double
+  float
     old_score,
-    new_score = std::numeric_limits<double>::max(),
+    new_score = std::numeric_limits<float>::max(),
     min_improvement = 25.0;
   int iter_idx = 0;
   while (score_condition && iter_idx++ < 50) {
@@ -162,10 +164,44 @@ void MultiPolynomialRegression::fit() {
   }
 }
 
+// Fit the number of models
+void MultiPolynomialRegression::fitNumModels(
+  const int min_num_models,
+  const int max_num_models
+) {
+  bool score_condition = true;
+  float
+    old_score,
+    new_score = std::numeric_limits<float>::max(),
+    min_improvement = 0.0005;
+  int num_models = std::max(min_num_models, 1) - 1;
+  while (score_condition && num_models++ < max_num_models) {
+    old_score = new_score;
+
+    // Initialize the models vector with the wished number of models
+    initModels(num_models);
+    // fit the models
+    fit();
+    
+    // Update the looping conditions
+    new_score = avgSquaredResiduals();
+    score_condition = old_score - new_score > min_improvement;
+  }
+
+  // If the last iteration decreased the score
+  // We go back to the previous one
+  if (old_score - new_score < 0) {
+    --num_models;
+
+    initModels(num_models);
+    fit();
+  }
+}
+
 // Predict target values for new data for all models
-Eigen::MatrixXd MultiPolynomialRegression::predict(const Eigen::MatrixXd& new_data) const {
+Eigen::MatrixXf MultiPolynomialRegression::predict(const Eigen::MatrixXf& new_data) const {
   int num_models = poly_models.size();
-  Eigen::MatrixXd y_predicted(new_data.rows(), num_models);
+  Eigen::MatrixXf y_predicted(new_data.rows(), num_models);
   for (int model_idx = 0; model_idx < num_models; ++model_idx) {
     y_predicted.col(model_idx) = poly_models(model_idx).predict(new_data);
   }
@@ -174,29 +210,29 @@ Eigen::MatrixXd MultiPolynomialRegression::predict(const Eigen::MatrixXd& new_da
 }
 
 // Get the coefficients of the models
-Eigen::MatrixXd MultiPolynomialRegression::getCoefficients() const {
+Eigen::MatrixXf MultiPolynomialRegression::getCoefficients() const {
   int num_models = poly_models.size();
-  Eigen::MatrixXd coefficients(num_models, degree + 1);
+  Eigen::MatrixXf coefficients(num_models, degree + 1);
   for (int model_idx = 0; model_idx < num_models; ++model_idx) {
     coefficients.row(model_idx) = poly_models(model_idx).getCoefficients();
   }
   return coefficients;
 }
 
-// Compute the avg of squared residuals
-double MultiPolynomialRegression::avgSquaredResiduals() const {
+// Compute the average model wise of the sum squared residuals
+float MultiPolynomialRegression::avgSquaredResiduals() const {
   int num_models = poly_models.size();
-  double avgSquaredResiduals = 0.0;
+  float avgSquaredResiduals = 0.0;
   for (int model_idx = 0; model_idx < num_models; ++model_idx) {
-    avgSquaredResiduals += poly_models(model_idx).avgSquaredResiduals();
+    avgSquaredResiduals += poly_models(model_idx).sumSquaredResiduals();
   }
   return avgSquaredResiduals / num_models;
 }
 
-// Compute the average R^2 score of the models
-double MultiPolynomialRegression::avgScore() const {
+// Compute the average model wise of the R^2 score
+float MultiPolynomialRegression::avgScore() const {
   int num_models = poly_models.size();
-  double score = 0.0;
+  float score = 0.0;
   for (int model_idx = 0; model_idx < num_models; ++model_idx) {
     score += poly_models(model_idx).score();
   }

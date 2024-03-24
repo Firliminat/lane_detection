@@ -6,49 +6,49 @@
 
 class PolynomialRegression {
 private:
-  Eigen::MatrixXd poly_X; // Polynomial inputs matrix
+  Eigen::MatrixXf poly_X; // Polynomial inputs matrix
   int degree; // Degree of the polynomial to use
   LinearRegression linear_model; // Ridge regression model
 
 // Generate a matrix containing the polynomial features of the input features
-  Eigen::MatrixXd generatePolynomialFeatures(const Eigen::MatrixXd&) const;
+  Eigen::MatrixXf generatePolynomialFeatures(const Eigen::MatrixXf&) const;
 
 public:
   PolynomialRegression(
-    const Eigen::MatrixXd&,
-    const Eigen::VectorXd&,
-    const Eigen::VectorXd&,
-    double,
+    const Eigen::MatrixXf&,
+    const Eigen::VectorXf&,
+    const Eigen::VectorXf&,
+    float,
     int
   );
 
-  PolynomialRegression(double, int);
+  PolynomialRegression(float, int);
 
   PolynomialRegression();
 
   // Updates the input matrix and the target vector
-  void updateData(const Eigen::MatrixXd&, const Eigen::VectorXd&, const Eigen::VectorXd&);
+  void updateData(const Eigen::MatrixXf&, const Eigen::VectorXf&, const Eigen::VectorXf&);
 
   // Setter for the coefficients
-  void setCoefficients(const Eigen::VectorXd&);
+  void setCoefficients(const Eigen::VectorXf&);
 
   // Fit the polynomial regression model
   void fit();
 
   // Predict target values for new data
-  Eigen::VectorXd predict(const Eigen::MatrixXd& new_data) const;
+  Eigen::VectorXf predict(const Eigen::MatrixXf& new_data) const;
 
   // Get the distance to prediction for each row
-  Eigen::VectorXd distanceToModel(const Eigen::MatrixXd&, const Eigen::VectorXd&) const;
+  Eigen::VectorXf distanceToModel(const Eigen::MatrixXf&, const Eigen::VectorXf&) const;
 
   // Get the coefficients of the model
-  Eigen::VectorXd getCoefficients() const;
+  Eigen::VectorXf getCoefficients() const;
 
-  // Compute the avg of squared residuals
-  double avgSquaredResiduals() const;
+  // Compute the sum of squared residuals
+  float sumSquaredResiduals() const;
 
   // Compute the R^2 score of the model
-  double score() const;
+  float score() const;
 };
 
 #endif /* POLYNOMIAL_REGRESSION_HPP */

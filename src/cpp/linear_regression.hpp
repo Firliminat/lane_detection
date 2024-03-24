@@ -5,48 +5,48 @@
 
 class LinearRegression {
 private:
-  Eigen::MatrixXd X; // Input matrix
-  Eigen::VectorXd y; // Target vector
-  Eigen::VectorXd y_pred; // Predicted target vector
-  Eigen::VectorXd coefficients; // Model coefficients
-  Eigen::VectorXd weights; // Weights used to favorise some points
-  double lambda; // Ridge regularization parameter
+  Eigen::MatrixXf X; // Input matrix
+  Eigen::VectorXf y; // Target vector
+  Eigen::VectorXf y_pred; // Predicted target vector
+  Eigen::VectorXf coefficients; // Model coefficients
+  Eigen::VectorXf weights; // Weights used to favorise some points
+  float lambda; // Ridge regularization parameter
 
 public:
   LinearRegression(
-    const Eigen::MatrixXd&,
-    const Eigen::VectorXd&,
-    const Eigen::VectorXd&,
-    double
+    const Eigen::MatrixXf&,
+    const Eigen::VectorXf&,
+    const Eigen::VectorXf&,
+    float
   );
 
-  LinearRegression(double);
+  LinearRegression(float);
 
   LinearRegression();
 
   // Updates the input matrix, the targets vector and the weights vector
-  void updateData(const Eigen::MatrixXd&, const Eigen::VectorXd&, const Eigen::VectorXd&);
+  void updateData(const Eigen::MatrixXf&, const Eigen::VectorXf&, const Eigen::VectorXf&);
 
   // Setter for the coefficients
-  void setCoefficients(const Eigen::VectorXd&);
+  void setCoefficients(const Eigen::VectorXf&);
 
   // Fit the linear regression model
   void fit();
 
   // Predict target values for new data
-  Eigen::VectorXd predict(const Eigen::MatrixXd&) const;
+  Eigen::VectorXf predict(const Eigen::MatrixXf&) const;
 
   // Get the distance to prediction for each input row
-  Eigen::VectorXd distanceToModel(const Eigen::MatrixXd&, const Eigen::VectorXd&) const;
+  Eigen::VectorXf distanceToModel(const Eigen::MatrixXf&, const Eigen::VectorXf&) const;
 
   // Get the coefficients of the model
-  Eigen::VectorXd getCoefficients() const;
+  Eigen::VectorXf getCoefficients() const;
 
-  // Compute the avg of squared residuals
-  double avgSquaredResiduals() const;
+  // Compute the sum of squared residuals
+  float sumSquaredResiduals() const;
   
   // Compute the R^2 score of the model
-  double score() const;
+  float score() const;
 };
 
 #endif /* LINEAR_REGRESSION_HPP */

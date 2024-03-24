@@ -54,7 +54,7 @@ void DataHandler::parseFolders() {
 }
 
 // Reads from file the points corresponding to the given frame index
-Eigen::MatrixXd DataHandler::readPoints(
+Eigen::MatrixXf DataHandler::readPoints(
   const int frame_index
 ) {
   std::ifstream lidar_file(
@@ -65,8 +65,28 @@ Eigen::MatrixXd DataHandler::readPoints(
     throw std::runtime_error("Failed to open file for reading.");
   }
 
-  Eigen::MatrixXd points(0, num_features);
-  Eigen::VectorXd point(num_features);
+  // Determine the file length
+  lidar_file.seekg(0, std::ios_base::end);
+  std::size_t size = lidar_file.tellg();
+  lidar_file.seekg(0, std::ios_base::beg);
+
+  // Create a vector to store the data
+  std::vector<float> input_buffer(size/sizeof(float));
+  // Load the data
+  lidar_file.read((char*) &input_buffer[0], size);
+
+  // Map the data to a matrix 
+  Eigen::MatrixXf points = Eigen::Map<
+    Eigen::Matrix<
+      float,
+      Eigen::Dynamic,
+      Eigen::Dynamic,
+      Eigen::RowMajor
+    >
+  >(input_buffer.data(), input_buffer.size()/num_features, num_features);
+
+  /* Eigen::MatrixXf points(0, num_features);
+  Eigen::VectorXf point(num_features);
   float value = 0.0;
   int attribute_index = 0;
   while(lidar_file.read(reinterpret_cast<char*>(&value), sizeof(float))){
@@ -80,14 +100,14 @@ Eigen::MatrixXd DataHandler::readPoints(
       points.row(points.rows()-1) = point;
       attribute_index = 0;
     }
-  }
+  } */
 
   lidar_file.close();
   return points;
 }
 
 // Reads from file the lanes corresponding to the given frame index
-Eigen::MatrixXd DataHandler::readLanes(
+Eigen::MatrixXf DataHandler::readLanes(
   // Index of the frame to read
   const int frame_index
 ) {
@@ -97,13 +117,13 @@ Eigen::MatrixXd DataHandler::readLanes(
   }
 
   std::string line;
-  std::vector<double> buff{};
+  std::vector<float> buff{};
   int num_rows = 0, num_cols;
   while (std::getline(lanes_file, line)) {
     Tools::trim(line);
     num_cols = 0;
     for (std::string coef_str : Tools::split(line, ";")) {
-      double coef = stod(coef_str);
+      float coef = stod(coef_str);
       buff.push_back(coef);
       ++num_cols;
     }
@@ -112,7 +132,7 @@ Eigen::MatrixXd DataHandler::readLanes(
 
   lanes_file.close();
   
-  Eigen::MatrixXd lanes_coefs = Eigen::MatrixXd::Zero(num_rows, num_cols);
+  Eigen::MatrixXf lanes_coefs = Eigen::MatrixXf::Zero(num_rows, num_cols);
   for(int i = 0; i < num_rows; ++i) {
     for(int j = 0; j < num_cols; ++j) {
       lanes_coefs(i, j) = buff.at(i * num_cols + j);
@@ -125,7 +145,7 @@ Eigen::MatrixXd DataHandler::readLanes(
 // Write lanes coefficients to the file corresponding to frame index
 void DataHandler::writeLanes(
   const int frame_index,
-  const Eigen::MatrixXd& lanes_coefs
+  const Eigen::MatrixXf& lanes_coefs
 ) {
   if(lanes_coefs.rows() < 1) {
     return;

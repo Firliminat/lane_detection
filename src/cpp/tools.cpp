@@ -29,7 +29,7 @@ namespace Tools {
   }
 
   // Remove a row from Eigen Matrix
-  void removeRow(Eigen::MatrixXd& matrix, int rowToRemove)
+  void removeRow(Eigen::MatrixXf& matrix, const int rowToRemove)
   {
     int numRows = matrix.rows()-1;
     int numCols = matrix.cols();
@@ -41,7 +41,7 @@ namespace Tools {
   }
 
   // Remove a column from Eigen Matrix
-  void removeColumn(Eigen::MatrixXd& matrix, int colToRemove)
+  void removeColumn(Eigen::MatrixXf& matrix, const int colToRemove)
   {
     int numRows = matrix.rows();
     int numCols = matrix.cols()-1;
