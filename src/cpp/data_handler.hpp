@@ -17,6 +17,9 @@ private:
     const int num_features
   );
 
+  // Reads from file the points corresponding to the given frame index
+  void parseFolders();
+
 public:
   // Folder where we can find files describing the points cloud
   std::filesystem::path data_folder;
@@ -33,14 +36,23 @@ public:
   int num_frames;
 
   // Get instance of the singleton
-  static DataHandler *getInstance(const std::string&, const std::string&, const int);
+  static DataHandler *getInstance(
+    const std::string&,
+    const std::string&,
+    const int
+  );
 
   // Delete copy constructor and assignment operator to prevent copies
   DataHandler(const DataHandler&) = delete;
   DataHandler& operator=(const DataHandler&) = delete;
 
-  // Reads from file the points corresponding to the given frame index
-  void parseFolders();
+
+  // update the properties and parse the folders
+  void update(
+    const std::string&,
+    const std::string&,
+    const int
+  );
 
   // Reads from file the points corresponding to the given frame index
   

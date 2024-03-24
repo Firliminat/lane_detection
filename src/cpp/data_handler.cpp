@@ -1,8 +1,10 @@
-#include <fstream>
-#include <vector>
-#include <filesystem>
-#include <Eigen/Dense>
 #include "data_handler.hpp"
+
+#include <fstream>
+#include <filesystem>
+#include <vector>
+#include <Eigen/Dense>
+
 #include "tools.hpp"
 
 
@@ -14,23 +16,13 @@ DataHandler::DataHandler(
   const std::string& data_folder,
   const std::string& lanes_folder,
   const int num_features
-) :
-  data_folder(data_folder),
-  lanes_folder(lanes_folder),
-  num_features(num_features)
-{}
-
-// Get instance of the singleton
-DataHandler *DataHandler::getInstance(
-  const std::string& data_folder,
-  const std::string& lanes_folder,
-  const int num_features
 )
 {
-    if(data_handler_==nullptr){
-        data_handler_ = new DataHandler(data_folder, lanes_folder, num_features);
-    }
-    return data_handler_;
+  this->update(
+    data_folder,
+    lanes_folder,
+    num_features
+  );
 }
 
 // Reads from file the points corresponding to the given frame index
@@ -49,16 +41,53 @@ void DataHandler::parseFolders() {
     this->num_frames += 1;
   }
 
+  // Making sure the paths are in same order
   std::sort(this->lidar_paths.begin(), this->lidar_paths.end());
   std::sort(this->lanes_paths.begin(), this->lanes_paths.end());
 }
 
+// Get instance of the singleton
+DataHandler *DataHandler::getInstance(
+  const std::string& data_folder,
+  const std::string& lanes_folder,
+  const int num_features
+)
+{
+    if(data_handler_ == nullptr){
+      data_handler_ = new DataHandler(
+        data_folder,
+        lanes_folder,
+        num_features
+      );
+    } else {
+      data_handler_->update(
+        data_folder,
+        lanes_folder,
+        num_features
+      );
+    }
+    return data_handler_;
+}
+
+// update the properties and parse the folders
+void DataHandler::update(
+  const std::string& data_folder,
+  const std::string& lanes_folder,
+  const int num_features
+) {
+  this->data_folder = data_folder;
+  this->lanes_folder = lanes_folder;
+  this->num_features = num_features;
+
+  this->parseFolders();
+}
+
 // Reads from file the points corresponding to the given frame index
 Eigen::MatrixXf DataHandler::readPoints(
-  const int frame_index
+  const int frame_idx
 ) {
   std::ifstream lidar_file(
-    this->lidar_paths.at(frame_index),
+    this->lidar_paths.at(frame_idx),
     std::ios::binary
   );
   if (!lidar_file.is_open()) {
@@ -85,23 +114,6 @@ Eigen::MatrixXf DataHandler::readPoints(
     >
   >(input_buffer.data(), input_buffer.size()/num_features, num_features);
 
-  /* Eigen::MatrixXf points(0, num_features);
-  Eigen::VectorXf point(num_features);
-  float value = 0.0;
-  int attribute_index = 0;
-  while(lidar_file.read(reinterpret_cast<char*>(&value), sizeof(float))){
-    point(attribute_index) = value;
-
-    if(attribute_index != (this->num_features -1)) {
-      ++attribute_index;
-    }
-    else {
-      points.conservativeResize(points.rows()+1, Eigen::NoChange);
-      points.row(points.rows()-1) = point;
-      attribute_index = 0;
-    }
-  } */
-
   lidar_file.close();
   return points;
 }
@@ -109,9 +121,9 @@ Eigen::MatrixXf DataHandler::readPoints(
 // Reads from file the lanes corresponding to the given frame index
 Eigen::MatrixXf DataHandler::readLanes(
   // Index of the frame to read
-  const int frame_index
+  const int frame_idx
 ) {
-  std::ifstream lanes_file(this->lanes_paths.at(frame_index));
+  std::ifstream lanes_file(this->lanes_paths.at(frame_idx));
   if (!lanes_file.is_open()) {
     throw std::runtime_error("Failed to open file for reading.");
   }
@@ -144,14 +156,14 @@ Eigen::MatrixXf DataHandler::readLanes(
 
 // Write lanes coefficients to the file corresponding to frame index
 void DataHandler::writeLanes(
-  const int frame_index,
+  const int frame_idx,
   const Eigen::MatrixXf& lanes_coefs
 ) {
   if(lanes_coefs.rows() < 1) {
     return;
   }
 
-  std::ofstream lane_file(this->lanes_paths.at(frame_index));
+  std::ofstream lane_file(this->lanes_paths.at(frame_idx));
   if (!lane_file.is_open()) {
     throw std::runtime_error("Failed to open file for writing.");
   }

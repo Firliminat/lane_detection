@@ -25,12 +25,7 @@ private:
   ) const;
 
   // Assigns the data points to the closest polynomial
-  void assignToModels(
-    const Eigen::MatrixXf& inputs,
-    const Eigen::VectorXf& targets,
-    const Eigen::VectorXf& weights,
-    Eigen::VectorXi& a
-  ) const;
+  void assignToModels(Eigen::VectorXi& a) const;
 
   // Initialize the polynomial models
   void initModels(const int);
@@ -49,10 +44,15 @@ public:
   );
 
   // Fit the model
-  void fit();
+  void fit(bool = false);
 
   // Fit the number of models
-  void fitNumModels(const int = 1, const int = 20);
+  void fitNumModels(
+    const int = 1,
+    const int = 20,
+    bool = false,
+    bool = false
+  );
 
   // Predict target values for new data for all models
   Eigen::MatrixXf predict(const Eigen::MatrixXf& new_data) const;
@@ -60,14 +60,12 @@ public:
   // Get the squared distances to prediction for each model
   Eigen::MatrixXf squaredDistancesToModels(
     const Eigen::MatrixXf& inputs,
-    const Eigen::VectorXf& targets,
-    const Eigen::VectorXf& weights
+    const Eigen::VectorXf& targets
   ) const;
 
   // Get the squared distance to prediction for each row
     Eigen::VectorXf squaredDistancesToModel(
       const Eigen::MatrixXf&,
-      const Eigen::VectorXf&,
       const Eigen::VectorXf&,
       const Eigen::VectorXi& = Eigen::VectorXi()
     ) const;
@@ -76,13 +74,16 @@ public:
   Eigen::MatrixXf getCoefficients() const;
 
   // Compute the the sum squared residuals to assigned model
-  float sumSquaredResiduals() const;
+  float weightedSumSquaredResiduals() const;
 
   // Compute the average model wise of the sum squared residuals
   float avgSquaredResiduals() const;
 
   // Compute the average model wise of the R^2 score
   float avgScore() const;
+
+  // Computes the simplified silhouette score of the model
+  float silhouetteScore() const;
 };
 
 #endif /* MULTI_POLYNOMIAL_REGRESSION_HPP */

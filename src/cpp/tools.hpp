@@ -1,12 +1,16 @@
 #ifndef TOOLS_HPP
 #define TOOLS_HPP
 
+#include <iostream>
+#include <iomanip>
 #include <string>
 #include <vector>
 #include <algorithm> 
 #include <cctype>
 #include <locale>
 #include <Eigen\Dense>
+
+#include "polynomial_regression.hpp"
 
 
 namespace Tools {
@@ -40,6 +44,15 @@ namespace Tools {
 
   // Remove a column from Eigen Matrix
   void removeColumn(Eigen::MatrixXf&, const int);
+
+  // Prints the titles
+  void printTitles(const std::vector<std::string>&, const std::streamsize = 15);
+
+  // Prints a row
+  void printRow(
+    const std::vector<float>&,
+    const std::streamsize = 15
+  );
 }
 
 #endif /* TOOLS_HPP */

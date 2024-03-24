@@ -42,7 +42,6 @@ public:
   // Get the squared distance to prediction for each row
     Eigen::VectorXf squaredDistancesToModel(
       const Eigen::MatrixXf&,
-      const Eigen::VectorXf&,
       const Eigen::VectorXf&
     ) const;
 
@@ -50,7 +49,7 @@ public:
   Eigen::VectorXf getCoefficients() const;
 
   // Compute the sum of squared residuals
-  float sumSquaredResiduals() const;
+  float weightedSumSquaredResiduals() const;
   
   // Compute the R^2 score of the model
   float score() const;

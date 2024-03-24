@@ -1,11 +1,15 @@
 #include "tools.hpp"
 
+#include <iostream>
+#include <iomanip>
 #include <string>
 #include <vector>
 #include <algorithm> 
 #include <cctype>
 #include <locale>
 #include <Eigen\Dense>
+
+#include "polynomial_regression.hpp"
 
 namespace Tools {
   /* separate the string in a vector of string using the
@@ -50,5 +54,31 @@ namespace Tools {
         matrix.block(0,colToRemove,numRows,numCols-colToRemove) = matrix.block(0,colToRemove+1,numRows,numCols-colToRemove);
 
     matrix.conservativeResize(numRows,numCols);
+  }
+
+  // Prints the titles
+  void printTitles(
+    const std::vector<std::string>& titles,
+    const std::streamsize width
+  ) {
+    // Print column titles
+    std::cout << std::left;
+    for (const auto& title : titles) {
+      std::cout << std::setw(width) << title;
+      std::cout << " | ";
+    }
+    std::cout << std::endl;
+  }
+
+  // Prints a row
+  void printRow(
+    const std::vector<float>& row,
+    const std::streamsize width
+  ) {
+    for (const auto& value : row) {
+      std::cout << std::setw(width) << value;
+      std::cout << " | ";
+    }
+    std::cout << std::endl;
   }
 }

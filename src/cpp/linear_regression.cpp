@@ -1,15 +1,15 @@
 #include "linear_regression.hpp"
 #include <Eigen/Dense>
+#include <iostream>
 
 LinearRegression::LinearRegression(
   const Eigen::MatrixXf& inputs,
   const Eigen::VectorXf& targets,
   const Eigen::VectorXf& weights,
   float lambda = 0.0
-):
-  X(inputs.rows(), inputs.cols() + 1),
-  lambda(lambda)
-{
+) {
+  X = Eigen::MatrixXf(inputs.rows(), inputs.cols() + 1);
+  this->lambda = lambda;
   updateData(inputs, targets, weights);
 }
 
@@ -67,11 +67,10 @@ void LinearRegression::updateData(
     }
     w = Eigen::VectorXf(new_weights);
   }
-
-  // Making sure weights are positive 
+  // Making sure weights are positive
   w = Eigen::VectorXf(w.array().abs());
-  // and weights vector is unitary for norm1
-  // weights = Eigen::VectorXf(weights.array() / weights.sum());
+  // and weights vector is unitary for norm 1
+  w = Eigen::VectorXf(w.array() / w.sum());
 }
 
 // Setter for the coefficients
@@ -111,10 +110,9 @@ Eigen::VectorXf LinearRegression::predict(const Eigen::MatrixXf& new_data) const
 // Get the squared distance to prediction for each row
 Eigen::VectorXf LinearRegression::squaredDistancesToModel(
   const Eigen::MatrixXf& inputs,
-  const Eigen::VectorXf& targets,
-  const Eigen::VectorXf& weights
+  const Eigen::VectorXf& targets
 ) const {
-  return Eigen::VectorXf((weights.array() * (predict(inputs).array() - targets.array())).square());
+  return Eigen::VectorXf((predict(inputs).array() - targets.array()).square());
 }
 
 // Get the coefficients of the model
@@ -123,15 +121,14 @@ Eigen::VectorXf LinearRegression::getCoefficients() const {
 }
 
 // Compute the sum of squared residuals
-float LinearRegression::sumSquaredResiduals() const {
-  Eigen::VectorXf residuals = squaredDistancesToModel(X, y, w);
-  return residuals.squaredNorm() / w.sum();
+float LinearRegression::weightedSumSquaredResiduals() const {
+  Eigen::VectorXf residuals = Eigen::VectorXf(w.array() * squaredDistancesToModel(X, y).array());
+  return residuals.sum();
 }
 
 // Compute the R^2 score of the model
 float LinearRegression::score() const {
-  Eigen::VectorXf residuals = squaredDistancesToModel(X, y, w);
-  float ss_res = residuals.sum();
-  float ss_tot = (w.array() * (y.array() - y.mean())).square().sum();
+  float ss_res = weightedSumSquaredResiduals();
+  float ss_tot = (w.array() * (y.array() - y.mean()).square()).sum();
   return 1.0 - (ss_res / ss_tot);
 }
