@@ -7,9 +7,8 @@ class LinearRegression {
 private:
   Eigen::MatrixXf X; // Input matrix
   Eigen::VectorXf y; // Target vector
-  Eigen::VectorXf y_pred; // Predicted target vector
+  Eigen::VectorXf w; // Weights used to favorise some points
   Eigen::VectorXf coefficients; // Model coefficients
-  Eigen::VectorXf weights; // Weights used to favorise some points
   float lambda; // Ridge regularization parameter
 
 public:
@@ -25,7 +24,11 @@ public:
   LinearRegression();
 
   // Updates the input matrix, the targets vector and the weights vector
-  void updateData(const Eigen::MatrixXf&, const Eigen::VectorXf&, const Eigen::VectorXf&);
+  void updateData(
+    const Eigen::MatrixXf&,
+    const Eigen::VectorXf&,
+    const Eigen::VectorXf&
+  );
 
   // Setter for the coefficients
   void setCoefficients(const Eigen::VectorXf&);
@@ -36,8 +39,12 @@ public:
   // Predict target values for new data
   Eigen::VectorXf predict(const Eigen::MatrixXf&) const;
 
-  // Get the distance to prediction for each input row
-  Eigen::VectorXf distanceToModel(const Eigen::MatrixXf&, const Eigen::VectorXf&) const;
+  // Get the squared distance to prediction for each row
+    Eigen::VectorXf squaredDistancesToModel(
+      const Eigen::MatrixXf&,
+      const Eigen::VectorXf&,
+      const Eigen::VectorXf&
+    ) const;
 
   // Get the coefficients of the model
   Eigen::VectorXf getCoefficients() const;

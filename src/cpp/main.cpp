@@ -45,8 +45,7 @@ int real_main() {
   Eigen::VectorXf weights = points.col(3);
 
   // Ridge regularization parameter, polynomial degree and number of models
-  // float lambda = 0.1;
-  float lambda = 0.0;
+  float lambda = 0.1;
   int degree = 3;
 
   std::cout << "Fitting the model to the data" << std::endl;

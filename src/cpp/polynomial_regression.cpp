@@ -7,7 +7,7 @@ Eigen::MatrixXf PolynomialRegression::generatePolynomialFeatures(
   const Eigen::MatrixXf& inputs
 ) const {
   if (degree < 1){
-    return Eigen::MatrixXf(1,0);
+    return Eigen::MatrixXf(inputs.rows(),0);
   }
 
   /*
@@ -83,13 +83,13 @@ void PolynomialRegression::updateData(
   // Making sure targets are not empty
   Eigen::VectorXf targets(new_targets);
   if (targets.size() < 1) {
-    targets.conservativeResize(1);
+    targets.conservativeResize(inputs.rows());
   }
   
   // Making sure weights are not empty
   Eigen::VectorXf weights(new_weights);
   if (weights.size() < 1) {
-    weights.conservativeResize(1);
+    weights.conservativeResize(inputs.rows());
   }
 
   // Updating with the safe values
@@ -113,10 +113,14 @@ Eigen::VectorXf PolynomialRegression::predict(const Eigen::MatrixXf& new_data) c
   return linear_model.predict(poly_new_data);
 }
 
-// Get the distance to prediction for each row
-Eigen::VectorXf PolynomialRegression::distanceToModel(const Eigen::MatrixXf& inputs, const Eigen::VectorXf& targets) const {
+// Get the squared distance to prediction for each row
+Eigen::VectorXf PolynomialRegression::squaredDistancesToModel(
+  const Eigen::MatrixXf& inputs,
+  const Eigen::VectorXf& targets,
+  const Eigen::VectorXf& weights
+) const {
   Eigen::MatrixXf new_X = generatePolynomialFeatures(inputs);
-  return linear_model.distanceToModel(new_X, targets);
+  return linear_model.squaredDistancesToModel(new_X, targets, weights);
 }
 
 // Get the coefficients of the model

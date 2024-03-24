@@ -9,7 +9,7 @@
 Eigen::VectorXi MultiPolynomialRegression::countAssignedPoints() const {
   Eigen::VectorXi assigned_counts = Eigen::VectorXi::Zero(poly_models.size());
   for (int point_idx = 0; point_idx < X.rows(); ++point_idx){
-    assigned_counts(points_assignments(point_idx)) += 1;
+    assigned_counts(a(point_idx)) += 1;
   }
 
   return assigned_counts;
@@ -19,38 +19,49 @@ Eigen::VectorXi MultiPolynomialRegression::countAssignedPoints() const {
 void MultiPolynomialRegression::updateWithAssignedData(
   Eigen::MatrixXf& assigned_X,
   Eigen::VectorXf& assigned_y,
-  Eigen::VectorXf& assigned_weights,
+  Eigen::VectorXf& assigned_w,
   const int model_idx
 ) const {
   assigned_X = Eigen::MatrixXf(0, X.cols());
   assigned_y = Eigen::VectorXf(0);
-  assigned_weights = Eigen::VectorXf(0);
+  assigned_w = Eigen::VectorXf(0);
   for (int point_idx = 0; point_idx < X.rows(); ++point_idx){
-    if(points_assignments(point_idx) == model_idx) {
+    if(a(point_idx) == model_idx) {
       assigned_X.conservativeResize(assigned_X.rows() + 1, Eigen::NoChange);
       assigned_X.row(assigned_X.rows() - 1) = X.row(point_idx);
 
       assigned_y.conservativeResize(assigned_y.rows() +1 );
       assigned_y(assigned_y.rows() - 1) = y(point_idx);
 
-      assigned_weights.conservativeResize(assigned_weights.rows() + 1);
-      assigned_weights(assigned_weights.rows() - 1) = weights(point_idx);
+      assigned_w.conservativeResize(assigned_w.rows() + 1);
+      assigned_w(assigned_w.rows() - 1) = w(point_idx);
     }
   }
 }
 
 // Assigns the data points tothe closest polynomial
-void MultiPolynomialRegression::assignToPolynomials(){
+void MultiPolynomialRegression::assignToModels(
+  const Eigen::MatrixXf& inputs,
+  const Eigen::VectorXf& targets,
+  const Eigen::VectorXf& weights,
+  Eigen::VectorXi& assignments
+) const {
+  // Making sure the assignment vector has the right size
+  if (assignments.size() != X.rows()) {
+    assignments.conservativeResize(X.rows());
+  }
+
+  Eigen::MatrixXf squaredDistances = squaredDistancesToModels(inputs, targets, weights);
   // For each point iterates over the models to assign the closest one
-  for (int input_idx = 0; input_idx < X.rows(); ++input_idx) {
+  for (int input_idx = 0; input_idx < inputs.rows(); ++input_idx) {
     float min_dist = std::numeric_limits<float>::max();
+
     for (int model_idx = 0; model_idx < poly_models.size(); ++model_idx) {
-      Eigen::MatrixXf inputs = X.row(input_idx);
-      Eigen::VectorXf targets = y.row(input_idx);
-      float new_dist = poly_models(model_idx).distanceToModel(inputs, targets)(0);
+      float new_dist = squaredDistances(input_idx, model_idx);
+
       if (new_dist < min_dist) {
         min_dist = new_dist;
-        points_assignments(input_idx) = model_idx;
+        assignments(input_idx) = model_idx;
       }
     }
   }
@@ -79,10 +90,10 @@ void MultiPolynomialRegression::fitModels(){
   for (int model_idx = 0; model_idx < poly_models.size(); ++model_idx) {
     Eigen::MatrixXf assigned_X;
     Eigen::VectorXf assigned_y;
-    Eigen::VectorXf assigned_weights;
-    updateWithAssignedData(assigned_X, assigned_y, assigned_weights, model_idx);
+    Eigen::VectorXf assigned_w;
+    updateWithAssignedData(assigned_X, assigned_y, assigned_w, model_idx);
 
-    poly_models(model_idx).updateData(assigned_X, assigned_y, assigned_weights);
+    poly_models(model_idx).updateData(assigned_X, assigned_y, assigned_w);
     poly_models(model_idx).fit();
   }
 }
@@ -97,8 +108,7 @@ MultiPolynomialRegression::MultiPolynomialRegression(
   const int num_models
 ) :
   X(inputs),
-  weights(weights),
-  points_assignments(X.rows())
+  a(X.rows())
 {
   this->y = Eigen::VectorXf(targets);
   this->degree = degree;
@@ -106,16 +116,16 @@ MultiPolynomialRegression::MultiPolynomialRegression(
 
   // If weights are provided, use them; otherwise, initialize weights to ones
   if (weights.size() < 1) {
-    this->weights = Eigen::VectorXf::Ones(inputs.rows());
+    this->w = Eigen::VectorXf::Ones(inputs.rows());
   } else {
     if (weights.size() != inputs.rows()) {
       throw std::invalid_argument("Invalid size of weights vector.");
     }
-    this->weights = Eigen::VectorXf(weights);
+    this->w = Eigen::VectorXf(weights);
   }
   // Making sure weights are positive and weights vector is unitary for manhattan norm
-  this->weights = Eigen::VectorXf(weights.array().abs());
-  this->weights = Eigen::VectorXf(this->weights.array() / this->weights.sum());
+  // this->w = Eigen::VectorXf(weights.array().abs());
+  // this->w = Eigen::VectorXf(this->w.array() / this->w.sum());
 
   // Initialize the models
   initModels(std::max(num_models, 1));
@@ -138,15 +148,15 @@ void MultiPolynomialRegression::fit() {
   float
     old_score,
     new_score = std::numeric_limits<float>::max(),
-    min_improvement = 25.0;
+    min_improvement = 5;
   int iter_idx = 0;
   while (score_condition && iter_idx++ < 50) {
     old_score = new_score;
 
-    assignToPolynomials();
+    assignToModels(X, y, w, a);
     fitModels();
     
-    new_score = avgSquaredResiduals();
+    new_score = sumSquaredResiduals();
     score_condition = old_score - new_score > min_improvement;
 
     Eigen::MatrixXi assigned_counts = countAssignedPoints();
@@ -173,7 +183,7 @@ void MultiPolynomialRegression::fitNumModels(
   float
     old_score,
     new_score = std::numeric_limits<float>::max(),
-    min_improvement = 0.0005;
+    min_improvement = 5;
   int num_models = std::max(min_num_models, 1) - 1;
   while (score_condition && num_models++ < max_num_models) {
     old_score = new_score;
@@ -184,7 +194,7 @@ void MultiPolynomialRegression::fitNumModels(
     fit();
     
     // Update the looping conditions
-    new_score = avgSquaredResiduals();
+    new_score = sumSquaredResiduals();
     score_condition = old_score - new_score > min_improvement;
   }
 
@@ -209,6 +219,48 @@ Eigen::MatrixXf MultiPolynomialRegression::predict(const Eigen::MatrixXf& new_da
   return y_predicted;
 }
 
+// Get the squared distances to prediction for each model
+Eigen::MatrixXf MultiPolynomialRegression::squaredDistancesToModels(
+  const Eigen::MatrixXf& inputs,
+  const Eigen::VectorXf& targets,
+  const Eigen::VectorXf& weights
+) const {
+  int num_models = poly_models.size();
+  Eigen::MatrixXf squaredDistances(inputs.rows(), num_models);
+  for (int model_index = 0; model_index < num_models; ++model_index) {
+    PolynomialRegression model = poly_models(model_index);
+    squaredDistances.col(model_index) = model.squaredDistancesToModel(inputs, targets, weights);
+  }
+  return squaredDistances;
+}
+
+// Get the squared distance to assigned model for each row
+Eigen::VectorXf MultiPolynomialRegression::squaredDistancesToModel(
+  const Eigen::MatrixXf& inputs,
+  const Eigen::VectorXf& targets,
+  const Eigen::VectorXf& weights,
+  const Eigen::VectorXi& assignments
+) const {
+  // If we have no assignment we use this->a
+  Eigen::MatrixXi safe_assignments(assignments);
+  if (safe_assignments.size() < inputs.rows()) {
+    safe_assignments = a;
+  }
+
+  int num_points = inputs.rows();
+  Eigen::VectorXf squaredDistances(num_points);
+  for (int point_idx = 0; point_idx < num_points; ++point_idx) {
+    PolynomialRegression model = poly_models(safe_assignments(point_idx)); 
+    squaredDistances.row(point_idx) = model.squaredDistancesToModel(
+      inputs.row(point_idx),
+      targets.row(point_idx),
+      weights.row(point_idx)
+    );
+  }
+
+  return squaredDistances;
+}
+
 // Get the coefficients of the models
 Eigen::MatrixXf MultiPolynomialRegression::getCoefficients() const {
   int num_models = poly_models.size();
@@ -217,6 +269,12 @@ Eigen::MatrixXf MultiPolynomialRegression::getCoefficients() const {
     coefficients.row(model_idx) = poly_models(model_idx).getCoefficients();
   }
   return coefficients;
+}
+
+// Compute the the sum of squared residuals to assigned model
+float MultiPolynomialRegression::sumSquaredResiduals() const {
+  Eigen::VectorXf squaredDistances = squaredDistancesToModel(X, y, w, a);
+  return squaredDistances.sum() / w.sum();
 }
 
 // Compute the average model wise of the sum squared residuals

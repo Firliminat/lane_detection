@@ -16,14 +16,14 @@ LinearRegression::LinearRegression(
 LinearRegression::LinearRegression(float lambda):
   X(Eigen::MatrixXf::Zero(1, 1)),
   y(Eigen::VectorXf::Zero(1)),
-  weights(Eigen::VectorXf::Zero(1)),
+  w(Eigen::VectorXf::Zero(1)),
   lambda(lambda)
 {}
 
 LinearRegression::LinearRegression():
   X(Eigen::MatrixXf::Zero(1, 1)),
   y(Eigen::VectorXf::Zero(1)),
-  weights(Eigen::VectorXf::Zero(1)),
+  w(Eigen::VectorXf::Zero(1)),
   lambda(0.0)
 {}
 
@@ -60,17 +60,18 @@ void LinearRegression::updateData(
 
   // If weights are provided, use them; otherwise, initialize weights to ones
   if (new_weights.size() < 1) {
-    weights = Eigen::VectorXf::Ones(inputs.rows());
+    w = Eigen::VectorXf::Ones(inputs.rows());
   } else {
     if (new_weights.size() != inputs.rows()) {
       throw std::invalid_argument("Invalid size of weights vector.");
     }
-    weights = Eigen::VectorXf(new_weights);
+    w = Eigen::VectorXf(new_weights);
   }
 
-  // Making sure weights are positive and weights vector is unitary norm1
-  weights = Eigen::VectorXf(weights.array().abs());
-  weights = Eigen::VectorXf(weights.array() / weights.sum());
+  // Making sure weights are positive 
+  w = Eigen::VectorXf(w.array().abs());
+  // and weights vector is unitary for norm1
+  // weights = Eigen::VectorXf(weights.array() / weights.sum());
 }
 
 // Setter for the coefficients
@@ -84,26 +85,36 @@ void LinearRegression::setCoefficients(const Eigen::VectorXf& new_coefficients) 
 
 // Fit the ridge regression model
 void LinearRegression::fit() {
-  Eigen::MatrixXf W = weights.asDiagonal(); // Diagonal matrix of weights
+  Eigen::MatrixXf W = w.asDiagonal(); // Diagonal matrix of weights
   Eigen::MatrixXf XtWX = X.transpose() * W * X;
   Eigen::MatrixXf eye = Eigen::MatrixXf::Identity(XtWX.rows(), XtWX.cols());
   coefficients = (XtWX + lambda * eye).ldlt().solve(X.transpose() * W * y);
-  y_pred = X * coefficients;
 }
 
 // Predict target values for new data
 Eigen::VectorXf LinearRegression::predict(const Eigen::MatrixXf& new_data) const {
-  Eigen::MatrixXf new_X = Eigen::MatrixXf::Ones(new_data.rows(), new_data.cols() + 1);
-  new_X.block(0, 0, new_data.rows(), new_data.cols()) = new_data;
+  Eigen::MatrixXf new_X(new_data);
+
+  // Making sure new data has the good number of features
+  int new_num_features = new_X.cols();
+  int num_features = X.cols();
+  if (new_num_features < X.cols()) {
+    int num_features_to_add = num_features - new_num_features;
+    new_X.conservativeResize(Eigen::NoChange, num_features);
+    new_X.block(0, new_num_features, new_X.rows(), num_features_to_add) = Eigen::MatrixXf::Ones(new_X.rows(), num_features_to_add);
+  }
+
+  // Making the predictions
   return new_X * coefficients;
 }
 
-// Get the distance to prediction for each row
-Eigen::VectorXf LinearRegression::distanceToModel(
+// Get the squared distance to prediction for each row
+Eigen::VectorXf LinearRegression::squaredDistancesToModel(
   const Eigen::MatrixXf& inputs,
-  const Eigen::VectorXf& targets
+  const Eigen::VectorXf& targets,
+  const Eigen::VectorXf& weights
 ) const {
-  return Eigen::VectorXf((predict(inputs).array() - targets.array()).square());
+  return Eigen::VectorXf((weights.array() * (predict(inputs).array() - targets.array())).square());
 }
 
 // Get the coefficients of the model
@@ -113,13 +124,14 @@ Eigen::VectorXf LinearRegression::getCoefficients() const {
 
 // Compute the sum of squared residuals
 float LinearRegression::sumSquaredResiduals() const {
-  Eigen::VectorXf residuals = Eigen::VectorXf(weights.array() * (y.array() - y_pred.array()));
-  return residuals.squaredNorm();
+  Eigen::VectorXf residuals = squaredDistancesToModel(X, y, w);
+  return residuals.squaredNorm() / w.sum();
 }
 
 // Compute the R^2 score of the model
 float LinearRegression::score() const {
-  float ss_res = (weights.array() * (y.array() - y_pred.array())).square().sum();
-  float ss_tot = (weights.array() * (y.array() - y.mean())).square().sum();
+  Eigen::VectorXf residuals = squaredDistancesToModel(X, y, w);
+  float ss_res = residuals.sum();
+  float ss_tot = (w.array() * (y.array() - y.mean())).square().sum();
   return 1.0 - (ss_res / ss_tot);
 }
