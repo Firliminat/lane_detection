@@ -76,7 +76,7 @@ namespace Tools {
   }
 
   // Row-wise filtering based on given colomn and interval
-  // We keep only inputs such that min <= input.col(col_idx) <= max
+  // We keep only inputs such that min < input.col(col_idx) < max
   Eigen::MatrixXf rowWiseFilter(
     const Eigen::MatrixXf& inputs,
     const Eigen::Index col_idx,
@@ -85,7 +85,7 @@ namespace Tools {
   ) {
     Eigen::MatrixXf filtered_inputs(0, inputs.cols());
     for (int pointidx = 0; pointidx < inputs.rows(); ++pointidx) {
-      if (min <= inputs(pointidx, col_idx) && inputs(pointidx, col_idx) <= max) {
+      if (min < inputs(pointidx, col_idx) && inputs(pointidx, col_idx) < max) {
         filtered_inputs.conservativeResize(filtered_inputs.rows() + 1, Eigen::NoChange);
         filtered_inputs.row(filtered_inputs.rows() - 1) = inputs.row(pointidx);
       }

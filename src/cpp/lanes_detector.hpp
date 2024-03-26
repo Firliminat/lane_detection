@@ -6,6 +6,7 @@
 #include "multi_polynomial_regression.hpp"
 #include "polynomial_regression.hpp"
 
+// Class used for detecting the two closest lanes
 class LanesDetector {
 private:
   const Eigen::Index X_COL = 0; // Col-index for x-values
@@ -17,6 +18,9 @@ private:
 
   Eigen::MatrixXf inputs; // Lidar points
 
+  Eigen::MatrixXf t_inputs; // Lidar points on the top of the road profile
+  Eigen::MatrixXf b_inputs; // Lidar points on the bottom of the road profile
+
   int degree; // Degree of the polynomials used to fit to the lanes
   float max_lane_width; // Max width of a road lane
   float min_lane_width; // Min width of a road lane
@@ -25,15 +29,12 @@ private:
   float max_intensity; // Maximum intensity used for intensity clipping
   float min_intensity; // Maximum intensity used for intensity filtering
 
-  int min_num_lanes; // Minimal number of lanes
-  int max_num_lanes; // Maximal number of lanes
-
-  float min_improvement; // Minimal improvement when fitting the lanes
   float lambda_road_profile; // Ridge regularization parameter for road profiling
   float lambda_lanes; // Ridge regularization parameter for lanes
 
   PolynomialRegression road_profile; // Polynomial regression model used to estimate the profile of the road
-  MultiPolynomialRegression lanes; // Multi polynomial regression model used to find the closest lanes
+  PolynomialRegression t_lane; // Polynomial regression model used to estimate the top lane
+  PolynomialRegression b_lane; // Polynomial regression model used to estimate the bottom lane
 
   // Applies the preprocessing
   void preProcess();
@@ -42,10 +43,14 @@ private:
   void computeRoadProfile();
 
   // Remove the points too far from the road profile
-  void filterFarthestPoints(const float);
+  void filterFarthestPoints(const float, const float = 0.0);
+
+  // Remove the points too far from the road profile
+  // and split between botom ones and top ones
+  void splitFilterPoints(const float, const float = 0.0);
   
   // Update distances to road profile
-  void updateDistances();
+  void updateDistances(const float =  0.0);
 
   // Find lanes in the remaining points
   void findLanes();
@@ -59,9 +64,6 @@ public:
     const float = 0.1, // lane_width_delta
     const float = 255.0, // max_intensity
     const float = 0.0, // min_intensity
-    const int = 2, // min_num_lanes
-    const int = 2, // max_num_lanes
-    const float = 0.1, // min_improvement
     const float = 0.0, // lambda_road_profile
     const float = 0.0 // lambda_lanes
   );
@@ -72,6 +74,16 @@ public:
   
   // Get the coefficients of the lanes
   Eigen::MatrixXf getLanesCoefficients() const;
+
+  // Get the R^2 scores the lanes in this order : min, max, avg
+  Eigen::VectorXf silhouetteScores() const;
+
+  // Get the R^2 scores the lanes in this order : min, max, avg
+  Eigen::VectorXf scores() const;
+
+  // Get the min R^2 scores of the lanes
+  float score() const;
+
 };
 
 #endif /* LANES_DETECTOR_HPP */

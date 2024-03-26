@@ -59,7 +59,7 @@ namespace Tools {
   Eigen::MatrixXf rowWiseFilter(
     const Eigen::MatrixXf& inputs = Eigen::MatrixXf::Zero(0,0),
     const Eigen::Index dim = 0,
-    const float min = std::numeric_limits<float>::min(),
+    const float min = -std::numeric_limits<float>::max(),
     const float max = std::numeric_limits<float>::max()
   );
 

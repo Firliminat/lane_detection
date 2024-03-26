@@ -114,7 +114,7 @@ Eigen::VectorXf LinearRegression::distancesToModel(
   const Eigen::MatrixXf& inputs,
   const Eigen::VectorXf& targets
 ) const {
-  return Eigen::VectorXf(predict(inputs).array() - targets.array());
+  return Eigen::VectorXf(targets.array() - predict(inputs).array());
 }
 
 // Get the squared distance to prediction for each row
