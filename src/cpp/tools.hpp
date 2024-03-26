@@ -39,12 +39,6 @@ namespace Tools {
     std::string delimiter
   );
 
-  // Remove a row from Eigen Matrix
-  void removeRow(Eigen::MatrixXf&, const int);
-
-  // Remove a column from Eigen Matrix
-  void removeColumn(Eigen::MatrixXf&, const int);
-
   // Prints the titles
   void printTitles(const std::vector<std::string>&, const std::streamsize = 15);
 
@@ -53,6 +47,22 @@ namespace Tools {
     const std::vector<float>&,
     const std::streamsize = 15
   );
+
+  Eigen::VectorXf clip(
+    const Eigen::VectorXf&,
+    const float = 0.0,
+    const float = 255.
+  );
+
+  // Row-wise filtering based on given colomn and interval
+  // We keep only inputs such that min <= input.col(dim) <= max
+  Eigen::MatrixXf rowWiseFilter(
+    const Eigen::MatrixXf& inputs = Eigen::MatrixXf::Zero(0,0),
+    const Eigen::Index dim = 0,
+    const float min = std::numeric_limits<float>::min(),
+    const float max = std::numeric_limits<float>::max()
+  );
+
 }
 
 #endif /* TOOLS_HPP */

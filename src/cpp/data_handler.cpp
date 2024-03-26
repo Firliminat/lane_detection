@@ -53,20 +53,20 @@ DataHandler *DataHandler::getInstance(
   const int num_features
 )
 {
-    if(data_handler_ == nullptr){
-      data_handler_ = new DataHandler(
-        data_folder,
-        lanes_folder,
-        num_features
-      );
-    } else {
-      data_handler_->update(
-        data_folder,
-        lanes_folder,
-        num_features
-      );
-    }
-    return data_handler_;
+  if(data_handler_ == nullptr){
+    data_handler_ = new DataHandler(
+      data_folder,
+      lanes_folder,
+      num_features
+    );
+  } else {
+    data_handler_->update(
+      data_folder,
+      lanes_folder,
+      num_features
+    );
+  }
+  return data_handler_;
 }
 
 // update the properties and parse the folders
@@ -75,11 +75,26 @@ void DataHandler::update(
   const std::string& lanes_folder,
   const int num_features
 ) {
-  this->data_folder = data_folder;
-  this->lanes_folder = lanes_folder;
-  this->num_features = num_features;
+  bool something_changed = false;
 
-  this->parseFolders();
+  if (data_folder != "") {
+    this->data_folder = data_folder;
+    something_changed = true;
+  }
+
+  if (lanes_folder != "") {
+    this->lanes_folder = lanes_folder;
+    something_changed = true;
+  }
+  
+  if (num_features > 0) {
+    this->num_features = num_features;
+    something_changed = true;
+  }
+
+  if (something_changed) {
+    this->parseFolders();
+  }
 }
 
 // Reads from file the points corresponding to the given frame index

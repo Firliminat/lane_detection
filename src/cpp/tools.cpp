@@ -32,30 +32,6 @@ namespace Tools {
     return substrings;
   }
 
-  // Remove a row from Eigen Matrix
-  void removeRow(Eigen::MatrixXf& matrix, const int rowToRemove)
-  {
-    int numRows = matrix.rows()-1;
-    int numCols = matrix.cols();
-
-    if( rowToRemove < numRows )
-      matrix.block(rowToRemove,0,numRows-rowToRemove,numCols) = matrix.block(rowToRemove+1,0,numRows-rowToRemove,numCols);
-
-    matrix.conservativeResize(numRows,numCols);
-  }
-
-  // Remove a column from Eigen Matrix
-  void removeColumn(Eigen::MatrixXf& matrix, const int colToRemove)
-  {
-    int numRows = matrix.rows();
-    int numCols = matrix.cols()-1;
-
-    if( colToRemove < numCols )
-        matrix.block(0,colToRemove,numRows,numCols-colToRemove) = matrix.block(0,colToRemove+1,numRows,numCols-colToRemove);
-
-    matrix.conservativeResize(numRows,numCols);
-  }
-
   // Prints the titles
   void printTitles(
     const std::vector<std::string>& titles,
@@ -80,5 +56,40 @@ namespace Tools {
       std::cout << " | ";
     }
     std::cout << std::endl;
+  }
+
+  // Clips the value of the vector to the given interval
+  Eigen::VectorXf clip(
+    const Eigen::VectorXf& inputs,
+    const float min,
+    const float max
+  ) {
+    Eigen::VectorXf outputs(inputs.size());
+    for (int input_idx = 0; input_idx < inputs.size(); ++input_idx) {
+      if (min > inputs(input_idx)) {
+        outputs(input_idx) = min;
+      } else if (inputs(input_idx) > max) {
+        outputs(input_idx) = max;
+      }
+    }
+    return outputs;
+  }
+
+  // Row-wise filtering based on given colomn and interval
+  // We keep only inputs such that min <= input.col(col_idx) <= max
+  Eigen::MatrixXf rowWiseFilter(
+    const Eigen::MatrixXf& inputs,
+    const Eigen::Index col_idx,
+    const float min,
+    const float max
+  ) {
+    Eigen::MatrixXf filtered_inputs(0, inputs.cols());
+    for (int pointidx = 0; pointidx < inputs.rows(); ++pointidx) {
+      if (min <= inputs(pointidx, col_idx) && inputs(pointidx, col_idx) <= max) {
+        filtered_inputs.conservativeResize(filtered_inputs.rows() + 1, Eigen::NoChange);
+        filtered_inputs.row(filtered_inputs.rows() - 1) = inputs.row(pointidx);
+      }
+    }
+    return filtered_inputs;
   }
 }

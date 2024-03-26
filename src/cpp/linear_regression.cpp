@@ -67,9 +67,11 @@ void LinearRegression::updateData(
     }
     w = Eigen::VectorXf(new_weights);
   }
-  // Making sure weights are positive
-  w = Eigen::VectorXf(w.array().abs());
-  // and weights vector is unitary for norm 1
+  // Making sure weights vector is unitary for norm 1
+  float w_sum = w.sum();
+  if(w_sum == 0.0) {
+    throw std::invalid_argument("Norm 1 of weights is 0.0");
+  }
   w = Eigen::VectorXf(w.array() / w.sum());
 }
 
@@ -107,12 +109,20 @@ Eigen::VectorXf LinearRegression::predict(const Eigen::MatrixXf& new_data) const
   return new_X * coefficients;
 }
 
+// Get the distance to prediction for each row
+Eigen::VectorXf LinearRegression::distancesToModel(
+  const Eigen::MatrixXf& inputs,
+  const Eigen::VectorXf& targets
+) const {
+  return Eigen::VectorXf(predict(inputs).array() - targets.array());
+}
+
 // Get the squared distance to prediction for each row
 Eigen::VectorXf LinearRegression::squaredDistancesToModel(
   const Eigen::MatrixXf& inputs,
   const Eigen::VectorXf& targets
 ) const {
-  return Eigen::VectorXf((predict(inputs).array() - targets.array()).square());
+  return Eigen::VectorXf(distancesToModel(inputs, targets).array().square());
 }
 
 // Get the coefficients of the model

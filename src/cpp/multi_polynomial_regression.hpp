@@ -2,6 +2,7 @@
 #define MULTI_POLYNOMIAL_REGRESSION_HPP
 
 #include <Eigen/Dense>
+
 #include "polynomial_regression.hpp"
 
 class MultiPolynomialRegression {
@@ -13,14 +14,16 @@ private:
   Eigen::VectorX<PolynomialRegression> poly_models; // Polynomial regression models
   float lambda; // Ridge regularization parameter
   int degree; // Degree of the polynomials
-  
-  Eigen::VectorXi countAssignedPoints() const;
+
+  Eigen::VectorXf init_coefficients; // Coefficients used toinitialize the models
+  float min_init_constant; // min y_value to initialize the models
+  float max_init_constant; // max y_value to initialize the models
 
   // Updates the given inputs, targets and weights with the ones assigned to model with given index
   void updateWithAssignedData(
     Eigen::MatrixXf&,
     Eigen::VectorXf&,
-    Eigen::VectorXf&,
+    Eigen::VectorXf&, // TODO: Put weights at the end
     const int
   ) const;
 
@@ -40,16 +43,19 @@ public:
     const Eigen::VectorXf& = Eigen::VectorXf(),
     const float = 0.0,
     const int = 0,
-    const int = 1
+    const Eigen::VectorXf = Eigen::VectorXf(),
+    const float = -1.0,
+    const float = 1.0
   );
 
   // Fit the model
-  void fit(bool = false);
+  void fit(const float = 0.01, bool = false);
 
   // Fit the number of models
   void fitNumModels(
     const int = 1,
     const int = 20,
+    const float = 0.01,
     bool = false,
     bool = false
   );
@@ -83,7 +89,16 @@ public:
   float avgScore() const;
 
   // Computes the simplified silhouette score of the model
-  float silhouetteScore() const;
+  float weightedSilhouetteScore() const;
+
+  // Computes the simplified silhouette score for each model
+  Eigen::VectorXf weightedSilhouetteScores() const;
+  
+  // Counts the number of points assigned to each model
+  Eigen::VectorXi countAssignedSamples() const;
+
+  // Sums the weights of points assigned to each model
+  Eigen::VectorXf sumAssignedWeigths() const;
 };
 
 #endif /* MULTI_POLYNOMIAL_REGRESSION_HPP */

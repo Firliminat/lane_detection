@@ -37,9 +37,9 @@ public:
 
   // Get instance of the singleton
   static DataHandler *getInstance(
-    const std::string&,
-    const std::string&,
-    const int
+    const std::string& = "",
+    const std::string& = "",
+    const int =  0
   );
 
   // Delete copy constructor and assignment operator to prevent copies
@@ -49,9 +49,9 @@ public:
 
   // update the properties and parse the folders
   void update(
-    const std::string&,
-    const std::string&,
-    const int
+    const std::string& = "",
+    const std::string& = "",
+    const int =  0
   );
 
   // Reads from file the points corresponding to the given frame index

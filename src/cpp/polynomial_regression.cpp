@@ -28,10 +28,10 @@ Eigen::MatrixXf PolynomialRegression::generatePolynomialFeatures(
   int num_features = inputs.cols();
   Eigen::MatrixXf poly_features(num_samples, degree * num_features);
   for (int i = 0; i < num_samples; ++i) {
-    int index = 0;
+    int idx = 0;
     for (int j = 0; j < num_features; ++j) {
       for (int d = degree; d > 0; --d) {
-        poly_features(i, index++) = std::pow(inputs(i, j), d);
+        poly_features(i, idx++) = std::pow(inputs(i, j), d);
       }
     }
   }
@@ -39,30 +39,41 @@ Eigen::MatrixXf PolynomialRegression::generatePolynomialFeatures(
 }
 
 PolynomialRegression::PolynomialRegression(
+  const int degree,
+  const float lambda,
   const Eigen::MatrixXf& inputs,
   const Eigen::VectorXf& targets,
-  const Eigen::VectorXf& weights = Eigen::VectorXf(),
-  float lambda = 0.0,
-  int degree = 0
+  const Eigen::VectorXf& weights
 ) {
   this->degree = degree;
-  poly_X = generatePolynomialFeatures(inputs);
-  linear_model = LinearRegression(poly_X, targets, weights, lambda);
-}
 
-PolynomialRegression::PolynomialRegression(
-  float lambda = 0.0,
-  int degree = 0
-) {
-  this->degree = degree;
-  poly_X = generatePolynomialFeatures(Eigen::MatrixXf(1, 1));
-  linear_model = LinearRegression(poly_X, Eigen::VectorXf::Zero(1), Eigen::VectorXf::Ones(1), lambda);
-}
+  // Making sure inputs are not empty
+  Eigen::MatrixXf X(inputs);
+  if (X.rows() < 1) {
+    X.conservativeResize(1, Eigen::NoChange);
+  }
+  if (X.cols() < 1) {
+    X.conservativeResize(Eigen::NoChange, 1);
+  }
+  
+  // Making sure targets are not empty
+  Eigen::VectorXf y(targets);
+  if (y.size() < 1) {
+    y.conservativeResize(inputs.rows());
+  }
+  
+  // Making sure weights are not empty
+  Eigen::VectorXf w(weights);
+  if (w.size() < 1) {
+    w.conservativeResize(inputs.rows());
+  }
+  // Making sure w are positive
+  w = Eigen::VectorXf(w.array().abs());
+  // and w vector is unitary for norm 1
+  w = Eigen::VectorXf(w.array() / w.sum());
 
-PolynomialRegression::PolynomialRegression() {
-  this->degree = degree;
-  poly_X = generatePolynomialFeatures(Eigen::MatrixXf(1, 1));
-  linear_model = LinearRegression(poly_X, Eigen::VectorXf::Zero(1), Eigen::VectorXf::Ones(1), 0.0);
+  poly_X = generatePolynomialFeatures(X);
+  linear_model = LinearRegression(poly_X, y, w, lambda);
 }
 
 // Updates the input matrix and the target vector
@@ -115,6 +126,15 @@ void PolynomialRegression::fit() {
 Eigen::VectorXf PolynomialRegression::predict(const Eigen::MatrixXf& new_data) const {
   Eigen::MatrixXf poly_new_data = generatePolynomialFeatures(new_data);
   return linear_model.predict(poly_new_data);
+}
+
+// Get the distance to prediction for each row
+Eigen::VectorXf PolynomialRegression::distancesToModel(
+  const Eigen::MatrixXf& inputs,
+  const Eigen::VectorXf& targets
+) const {
+  Eigen::MatrixXf new_X = generatePolynomialFeatures(inputs);
+  return linear_model.distancesToModel(new_X, targets);
 }
 
 // Get the squared distance to prediction for each row

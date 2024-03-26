@@ -39,6 +39,12 @@ public:
   // Predict target values for new data
   Eigen::VectorXf predict(const Eigen::MatrixXf&) const;
 
+  // Get the distance to prediction for each row
+    Eigen::VectorXf distancesToModel(
+      const Eigen::MatrixXf&,
+      const Eigen::VectorXf&
+    ) const;
+
   // Get the squared distance to prediction for each row
     Eigen::VectorXf squaredDistancesToModel(
       const Eigen::MatrixXf&,

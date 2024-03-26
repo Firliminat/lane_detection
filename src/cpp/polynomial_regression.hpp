@@ -15,16 +15,12 @@ private:
 
 public:
   PolynomialRegression(
-    const Eigen::MatrixXf&,
-    const Eigen::VectorXf&,
-    const Eigen::VectorXf&,
-    float,
-    int
-  );
-
-  PolynomialRegression(float, int);
-
-  PolynomialRegression();
+  const int = 0,
+  const float = 0.0,
+  const Eigen::MatrixXf& = Eigen::MatrixXf(),
+  const Eigen::VectorXf& = Eigen::VectorXf(),
+  const Eigen::VectorXf& = Eigen::VectorXf()
+);
 
   // Updates the input matrix and the target vector
   void updateData(const Eigen::MatrixXf&, const Eigen::VectorXf&, const Eigen::VectorXf&);
@@ -38,11 +34,17 @@ public:
   // Predict target values for new data
   Eigen::VectorXf predict(const Eigen::MatrixXf& new_data) const;
 
+  // Get the distance to prediction for each row
+  Eigen::VectorXf distancesToModel(
+    const Eigen::MatrixXf&,
+    const Eigen::VectorXf&
+  ) const;
+
   // Get the squared distance to prediction for each row
-    Eigen::VectorXf squaredDistancesToModel(
-      const Eigen::MatrixXf&,
-      const Eigen::VectorXf&
-    ) const;
+  Eigen::VectorXf squaredDistancesToModel(
+    const Eigen::MatrixXf&,
+    const Eigen::VectorXf&
+  ) const;
 
   // Get the coefficients of the model
   Eigen::VectorXf getCoefficients() const;
