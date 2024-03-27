@@ -1,10 +1,31 @@
 # Seoul Robotics Coding Assignment - Ego Lane Detection - Readme
 
-## Detecting lanes using lidar data
+## The project
 
 This project is an assignment for Seoul Robotics in which the interviewee is asked to detect white lanes on a road using lidar values. At this point only visualization filters have been implemented.
 
-## Setting Up
+### Line Detection - C++
+
+First you'll need to have Eigen library. Make sure it is in your include path. Then you can compile :
+
+```
+g++ -g .\src\cpp\*.cpp -o .\bin\main.exe
+```
+
+Finally you can execute the program.
+
+```
+.\bin\main.exe
+```
+
+This program will load the data and write it's outputs from these relatives paths : .\pointclouds, .\sample_output.
+You can edit them by changing the values of data_folder and lanes_folder if needed.
+
+Once the data loaded the algortihm will loop through all the frames to find the lanes for each frame and generate the corresponding lane file.
+
+You can use another model that will try to find more than two lanes by passing `--nPoly` as an argument when calling the program. This program will write the lane files to .\sample_output_nPoly.
+
+### Visualization - Python
 
 First you'll need to set up a python3.8 virtual environment. You can do it this way :
 
@@ -20,19 +41,6 @@ source tutorial-env/bin/activate
 pip install -r requirement.txt
 ```
 
-## Usage
-
-### Fitting polynomials to the data
-
-To fit polynomials to the data you need to run main.py. You can do it this way:
-```
-python src/main.py
-```
-First the algorithm will go through all the frames and fit a model to find the white lines and save the closest lanes to the origin to a lane file in sample output.
-Then you will be prompted with steps to display a frame and see the model being fitted to this frame.
-
-### Visualization
-
 #### Start it
 
 To visualize the data and filter it you need to run data_visualize.py. You can do it this way:
@@ -40,8 +48,9 @@ To visualize the data and filter it you need to run data_visualize.py. You can d
 python data_visualize.py
 ```
 
-#### Control it
+#### Control the visualization
 
-- You can chane frame by using the left or right arrow keys.
-- You can increase or decrease intensity minimal value with PgUp or PgDown keys. A minimal value of 0 will display all points.
-- You can increase or decrease lidar beam value with up or down arow keys. A value of -1.0 will display all beams.
+- Change frame by using the left or right arrow keys.
+- Increase or decrease intensity threshold with PgUp or PgDown keys. A threshold of 0 will display all points.
+- Increase or decrease intensity ceiling with D or C keys. A ceiling of 255 will display all points.
+- Increase or decrease the selected lidar beam value with up or down arow keys. A value of -1.0 will display all beams.

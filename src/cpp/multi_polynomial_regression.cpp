@@ -173,7 +173,7 @@ void MultiPolynomialRegression::fitNumModels(
   bool talkative
 ) {
   if(verbose && !talkative) {
-    Tools::printTitles({"num models", "sum resi", "avg silh", "min silh", "max silh", "avg R^2"}, 13);
+    Tools::printTitles({"num models", "sum resi", "avg silh", "min silh", "max silh", "avg score", "min score", "max score"}, 13);
   }
 
   int best_num_models = min_num_models;
@@ -187,18 +187,19 @@ void MultiPolynomialRegression::fitNumModels(
     fit(min_improvement, talkative);
 
     Eigen::MatrixXf silh_scores = weightedSilhouetteScores();
-    float new_score = silh_scores.maxCoeff();
+    Eigen::MatrixXf scores = this->scores();
+    float new_score = silh_scores.minCoeff();
     if(new_score > score) {
       best_num_models = num_models;
       score = new_score;
     }
     if(verbose) {
-      float avg_silh = silh_scores.mean();
-      float min_silh = silh_scores.minCoeff();
+      float avg_silh = weightedSilhouetteScore();
+      float max_silh = silh_scores.maxCoeff();
       if(talkative) {
-        Tools::printTitles({"num models", "sum resi", "avg silh", "min silh", "max silh", "avg R^2"}, 13);
+        Tools::printTitles({"num models", "sum resi", "avg silh", "min silh", "max silh", "avg score", "min score", "max score"}, 13);
       }
-      Tools::printRow({static_cast<float>(num_models), weightedSumSquaredResiduals(), avg_silh, min_silh, new_score, avgScore()}, 13);
+      Tools::printRow({static_cast<float>(num_models), weightedSumSquaredResiduals(), avg_silh, new_score, max_silh, avgScore(), scores.minCoeff(), scores.maxCoeff()}, 13);
     }
   }
 
@@ -286,7 +287,17 @@ float MultiPolynomialRegression::avgSquaredResiduals() const {
   return avgSquaredResiduals / num_models;
 }
 
-// Compute the average model wise of the R^2 score
+// Compute the scores of the models
+Eigen::VectorXf MultiPolynomialRegression::scores() const {
+  int num_models = poly_models.size();
+  Eigen::VectorXf scores(num_models);
+  for (int model_idx = 0; model_idx < num_models; ++model_idx) {
+    scores(model_idx) =  poly_models(model_idx).score();
+  }
+  return scores;
+}
+
+// Compute the average model wise of the score
 float MultiPolynomialRegression::avgScore() const {
   int num_models = poly_models.size();
   float score = 0.0;
@@ -298,7 +309,7 @@ float MultiPolynomialRegression::avgScore() const {
 
 // Computes the simplified silhouette score of the model
 float MultiPolynomialRegression::weightedSilhouetteScore() const {
-  return weightedSilhouetteScores().mean();
+  return (weightedSilhouetteScores().array() * sumAssignedWeigths().array()).sum() / sumAssignedWeigths().sum();
 }
 
 // Computes the simplified silhouette score of the model

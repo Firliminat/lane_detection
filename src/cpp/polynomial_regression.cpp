@@ -156,7 +156,7 @@ float PolynomialRegression::weightedSumSquaredResiduals() const {
   return linear_model.weightedSumSquaredResiduals();
 }
 
-// Compute the R^2 score of the model
+// Compute the score of the model
 float PolynomialRegression::score() const {
   return linear_model.score();
 }

@@ -75,13 +75,13 @@ public:
   // Get the coefficients of the lanes
   Eigen::MatrixXf getLanesCoefficients() const;
 
-  // Get the R^2 scores the lanes in this order : min, max, avg
+  // Get the silhouette scores the lanes in this order : min, max, avg
   Eigen::VectorXf silhouetteScores() const;
 
-  // Get the R^2 scores the lanes in this order : min, max, avg
+  // Get the R2 scores the lanes in this order : min, max, avg
   Eigen::VectorXf scores() const;
 
-  // Get the min R^2 scores of the lanes
+  // Get the min scores of the lanes
   float score() const;
 
 };

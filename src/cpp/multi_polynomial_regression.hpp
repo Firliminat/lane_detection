@@ -84,8 +84,11 @@ public:
 
   // Compute the average model wise of the sum squared residuals
   float avgSquaredResiduals() const;
+  
+  // Compute the R2 scores of the models
+  Eigen::VectorXf scores() const;
 
-  // Compute the average model wise of the R^2 score
+  // Compute the average model wise of the score
   float avgScore() const;
 
   // Computes the simplified silhouette score of the model

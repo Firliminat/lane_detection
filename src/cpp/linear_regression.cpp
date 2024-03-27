@@ -136,7 +136,7 @@ float LinearRegression::weightedSumSquaredResiduals() const {
   return residuals.sum();
 }
 
-// Compute the R^2 score of the model
+// Compute the score of the model
 float LinearRegression::score() const {
   float ss_res = weightedSumSquaredResiduals();
   float ss_tot = (w.array() * (y.array() - y.mean()).square()).sum();

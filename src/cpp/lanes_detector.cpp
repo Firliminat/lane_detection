@@ -120,7 +120,7 @@ void LanesDetector::fit(bool verbose) {
       "best width",
       "best center",
       "avg silh",
-      "min r2",
+      "min score",
       "top sum W",
       "bot sum W",
       "nbPoints",
@@ -162,7 +162,7 @@ void LanesDetector::fit(bool verbose) {
       }
       if(verbose) {
         Eigen::VectorXf silhouette_scores = silhouetteScores();
-        Eigen::VectorXf r2_scores = scores();
+        Eigen::VectorXf scores = this->scores();
 
         Tools::printRow({
           static_cast<float>(iter_idx),
@@ -171,7 +171,7 @@ void LanesDetector::fit(bool verbose) {
           best_lane_width,
           best_lane_center,
           silhouette_scores(0),
-          r2_scores(0),
+          scores(0),
           t_inputs.col(I_COL).sum(),
           b_inputs.col(I_COL).sum(),
           t_inputs.col(I_COL).sum() + b_inputs.col(I_COL).sum()
@@ -234,7 +234,7 @@ Eigen::VectorXf LanesDetector::silhouetteScores() const {
   return scores;
 }
 
-// Get the R^2 scores the lanes in this order : min, max, avg
+// Get the R2 scores of the lanes in this order : min, max, avg
 Eigen::VectorXf LanesDetector::scores() const {
   float t_score = t_lane.score();
   float b_score = b_lane.score();
@@ -250,7 +250,7 @@ Eigen::VectorXf LanesDetector::scores() const {
   return scores;
 }
 
-// Get the min R^2 scores of the lanes
+// Get the min R2 scores of the lanes
 float LanesDetector::score() const {
   return scores()(0);
 }

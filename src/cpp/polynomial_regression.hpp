@@ -52,7 +52,7 @@ public:
   // Compute the sum of squared residuals
   float weightedSumSquaredResiduals() const;
 
-  // Compute the R^2 score of the model
+  // Compute the score of the model
   float score() const;
 };
 
