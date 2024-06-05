@@ -17,10 +17,10 @@ I am looking for white lanes which are likely to be more reflective than other m
 Here are examples of visualizations with intensity filtering:
 
 Frame 0 - intensity >= 15 :
-![Low intensity filtering - frame 0 - min intensity 15](report_media\images\intensity_filtering_f0_int15.png)
+![Low intensity filtering - frame 0 - min intensity 15](report_media/images/intensity_filtering_f0_int15.png)
 
 Frame 5 - intensity >= 20 :
-![Low intensity filtering - frame 5 - min intensity 20](report_media\images\intensity_filtering_f5_int20.png)
+![Low intensity filtering - frame 5 - min intensity 20](report_media/images/intensity_filtering_f5_int20.png)
 
 These visualizations confirms that points with higher intensity are more likely to belong to a lane. I also realize that they are false positives. For example, on the first image we can see a circle of highly reflective close to the center. It may be the back of the car. On the second image we can see a great number of false positives outside of the road. Maybe some surrounding buildings were highly reflective. Thus, filtering on intensity alone might not be enough.
 
@@ -31,17 +31,17 @@ I wanted to understand more clearly how are the lidar beams arranged and how the
 Here are examples of visualizations with lidar beam filtering:
 
 Frame 0 - beam value = 62 :
-![Beam value filtering - frame 0 - beam value 62](report_media\images\beamvalue_filtering_f0_beam62.png)
+![Beam value filtering - frame 0 - beam value 62](report_media/images/beamvalue_filtering_f0_beam62.png)
 
 Frame 0 - beam value = 56 :
-![Beam value filtering - frame 0 - beam value 56](report_media\images\beamvalue_filtering_f0_beam56.png)
+![Beam value filtering - frame 0 - beam value 56](report_media/images/beamvalue_filtering_f0_beam56.png)
 
 It's at this point that I fully understood the schema explaining the data in the instructions. Beams are angled toward the ground each with a diferent angle. Thus, they give concentric observations of the environment. We can see on the second visualization that the circle of points is flatter on the top or bottom. Something higher than the floor must have blocked the view. As white lanes are likely to be close to the floor, filtering points closer or farther from the origin could help removing some false positives.
 
 This kind of filtering could be really usefull for situations similar to the frame 5 where objects outside the road a reflecting lidar beams. If we isolate lidar beam points that hit objects outside the road we can see a really important variation in the distance to the center.
 
 Frame 5 - beam value = 44 :
-![Beam value filtering - frame 5 - beam value 44](report_media\images\beamvalue_filtering_f5_beam44.png)
+![Beam value filtering - frame 5 - beam value 44](report_media/images/beamvalue_filtering_f5_beam44.png)
 
 
 ## First idea - N Polynomial Clustering
@@ -75,12 +75,12 @@ I tried building other filters based on the height or the distance to rhe origin
 With a manually fixed number of polynomials this algorithm can have really promising results.
 
 Frame 0 - 6 lanes :
-![Frame 0 - 6 lanes](report_media\images\nPolyf16l.png)
+![Frame 0 - 6 lanes](report_media/images/nPolyf16l.png)
 
 But finding this number automatically is not easy.
 
 Frame 0 - 10 lanes :
-![Frame 0 - 10 lanes](report_media\images\nPolyf110l.png)
+![Frame 0 - 10 lanes](report_media/images/nPolyf110l.png)
 
 #### Squared Residuals
 
@@ -91,7 +91,7 @@ We can't use the sum of squared residuals as a metric to stop adding clusters as
 I decided to choose an interval for the number of polynomials then go through the whole interval and then choose the number of polnomials with the maximum of the minimums of the coefficient of determination of the lanes.
 
 Here is a plot of the extremums and average of the R2 score for the frame 0: 
-![Frame 0 - R2](report_media\images\nPolyf0r2.png)
+![Frame 0 - R2](report_media/images/nPolyf0r2.png)
 
 It does not choose a good number of cluster. Here it would pick 8, the maximum it tried.
 
@@ -100,7 +100,7 @@ It does not choose a good number of cluster. Here it would pick 8, the maximum i
 My next try was the silhouette score and it improved a bit the situation. 
 
 Silhouette scores - Frame 0 :
-![Frame 0 - Silhouette](report_media\images\nPolyf0silh.png)
+![Frame 0 - Silhouette](report_media/images/nPolyf0silh.png)
 
 As you can see this time it selects 3 lanes, the minimum tried.
 
@@ -109,7 +109,7 @@ As you can see this time it selects 3 lanes, the minimum tried.
 Reflective objects out of the road where a real issue when trying to fit the models. Some lanes are sticking to thiese objects thus getting away from the road.
 
 Frame 10 :
-![Frame 10 - Reflective object](report_media\images\nPolyf10.png)
+![Frame 10 - Reflective object](report_media/images/nPolyf10.png)
 
 ### Implementation
 
@@ -128,7 +128,7 @@ The idea is to use polynomial regression on the whole point cloud and anchor it 
 When we filter points based on their distances to the profile we define a width and a center for the lane as the car could be changing lanes. Therefore, we need to select these parameters. As I did previously, I iterated other some lanes widths and center and kept the combination with the best silhouette score.
 
 Silhouette VS Lane width :
-![Frame 10 - Reflective object](report_media\images\silhouette_lanewisth.png)
+![Frame 10 - Reflective object](report_media/images/silhouette_lanewisth.png)
 
 In this graph we can see that the maximum silhouette seems to be a good score. But it does not generalises well. The algorithm tends to get the lanes too close and one is fitting to all the points when the other ones has really few.
 
